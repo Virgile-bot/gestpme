@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Détail PME — Espace DGI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar" style="background-color:var(--encre);">
+        <div class="topbar-logo">GestPME — Espace DGI</div>
+        <div class="topbar-user">
+            <a href="/dgi" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>{{ pme.nom_entreprise }}</h1>
+        <p>IFU : {{ pme.ifu }} — {{ pme.adresse }}</p>
+
+        <div class="modules-titre">Factures de cette PME</div>
+
+        <div class="liste-cartes">
+            {% for facture in factures %}
+            <div class="item-carte {{ 'statut-ok' if facture.transmise_dgi else 'statut-attente' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ facture.numero_facture }} — {{ facture.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        HT : {{ facture.montant_ht }} F · TVA : {{ facture.montant_tva }} F
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px; margin-top:2px;">
+                        Émise le {{ facture.date_emission.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ facture.montant_ttc }} F</div>
+                    {% if facture.transmise_dgi %}
+                        <span class="badge badge-payee">Validée</span>
+                    {% else %}
+                        <span class="badge badge-en_attente">À valider</span>
+                    {% endif %}
+                </div>
+                <div class="item-carte-actions">
+                    {% if not facture.transmise_dgi %}
+                        <a href="/dgi/marquer_transmise/{{ facture.id }}" class="btn-sm primaire">Valider</a>
+                    {% else %}
+                        <span style="font-size:12px; color:var(--encre-douce);">—</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune facture pour cette PME.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

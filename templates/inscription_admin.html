@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Inscription Administrateur</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="inscription-wrap">
+        <div class="inscription-card">
+            <h1>GestPME</h1>
+            <p class="sous-titre">Créer un compte Administrateur PME</p>
+
+            {% if erreur %}
+                <p class="erreur">{{ erreur }}</p>
+            {% endif %}
+
+            <div class="conseil" style="margin-bottom:16px; font-size:12px;">
+                🔐 Cette page est réservée aux responsables d'entreprise. Un code d'accès vous est nécessaire pour créer ce compte.
+            </div>
+
+            <form method="POST" action="/inscription-admin">
+
+                <div class="inscription-section">Votre entreprise</div>
+
+                <div class="form-group">
+                    <label>Sélectionnez votre entreprise</label>
+                    <select name="pme_id" required>
+                        <option value="">-- Choisir une entreprise --</option>
+                        {% for pme in pme_liste %}
+                            <option value="{{ pme.id }}">{{ pme.nom_entreprise }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="inscription-section">Vos informations</div>
+
+                <div class="form-group">
+                    <label>Nom complet</label>
+                    <input type="text" name="nom_complet" placeholder="Ex: Jean-Pierre Koudosse" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="votre@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" name="mot_de_passe" placeholder="Minimum 8 caractères" minlength="8" required>
+                </div>
+
+                <div class="inscription-section">Code d'accès</div>
+
+                <div class="form-group">
+                    <label>Code secret administrateur</label>
+                    <input type="password" name="code_secret"
+                           placeholder="Code fourni par GestPME" required
+                           style="letter-spacing:0.1em;">
+                </div>
+
+                <button type="submit">Créer mon compte administrateur</button>
+            </form>
+
+            <a href="/login" class="retour-login">← Retour à la connexion</a>
+        </div>
+    </div>
+</body>
+</html>

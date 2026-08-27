@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Admin Ventes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar" style="background-color: #2D2A26;">
+        <div class="topbar-logo">GestPME — Admin</div>
+        <div class="topbar-user">
+            <a href="/admin" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Toutes les ventes</h1>
+        <p>Historique complet — vous pouvez rejeter une vente non encore facturée</p>
+
+        <div class="liste-cartes">
+            {% for v in ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' if v.statut == 'annulee' else 'statut-attente' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }} — par {{ v.gerant_nom }}</div>
+                    <div class="item-carte-sous">{{ v.nom_produit }} · {{ v.quantite }} unité(s) · {{ v.mode_paiement }}</div>
+                    <div class="item-carte-sous" style="font-size:11px;">{{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }} · #V-{{ '%04d' | format(v.id) }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                        <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                           onclick="return confirm('Rejeter définitivement cette vente ?')">Rejeter</a>
+                    {% elif v.statut == 'annulee' %}
+                        <span style="font-size:11px; color:var(--encre-douce);">Rejetée</span>
+                    {% else %}
+                        <span style="font-size:11px; color:var(--encre-douce);">Facturée</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

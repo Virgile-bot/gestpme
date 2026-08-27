@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Modifier la vente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/ventes" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Modifier la vente #{{ '%04d' | format(vente.id) }}</h1>
+        <p>Cette vente n'a pas encore été facturée — vous pouvez la corriger librement.</p>
+
+        <div class="form-card">
+            <form method="POST" action="/ventes/mettre_a_jour/{{ vente.id }}">
+                <div class="form-section">Informations client</div>
+                <div class="form-group">
+                    <label>Nom du client</label>
+                    <input type="text" name="client_nom" value="{{ vente.client_nom }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Mode de paiement</label>
+                    <select name="mode_paiement" required>
+                        <option value="especes" {{ 'selected' if vente.mode_paiement == 'especes' }}>Espèces</option>
+                        <option value="mobile_money" {{ 'selected' if vente.mode_paiement == 'mobile_money' }}>Mobile Money</option>
+                        <option value="virement" {{ 'selected' if vente.mode_paiement == 'virement' }}>Virement</option>
+                        <option value="cheque" {{ 'selected' if vente.mode_paiement == 'cheque' }}>Chèque</option>
+                    </select>
+                </div>
+
+                <div class="form-section">Produit vendu</div>
+                <div class="form-group">
+                    <label>Produit</label>
+                    <select name="produit_id" required>
+                        {% for produit in produits %}
+                            <option value="{{ produit.id }}" {{ 'selected' if produit.id == vente.produit_id }}>
+                                {{ produit.nom }} — {{ produit.prix_unitaire }} F (stock : {{ produit.quantite_stock }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantité</label>
+                    <input type="number" name="quantite" value="{{ vente.quantite }}" min="1" required>
+                </div>
+
+                <button type="submit">Enregistrer les corrections</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

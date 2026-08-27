@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Tableau de bord</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/logout" class="btn-logout">Déconnexion</a>
+        </div>
+    </header>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Bienvenue, {{ nom }}. Voici l'état de votre activité aujourd'hui.</p>
+
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-label">Ventes du jour</div>
+                <div class="carte-valeur">{{ total_jour }} F</div>
+                {% if variation_pct is not none %}
+                    <div style="font-size:11px; margin-top:6px; color:{{ 'var(--vert)' if variation_pct >= 0 else 'var(--rouge)' }}; font-weight:600;">
+                        {{ '▲' if variation_pct >= 0 else '▼' }} {{ variation_pct }}% vs hier ({{ total_veille }} F)
+                    </div>
+                {% else %}
+                    <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
+                        Hier : {{ total_veille }} F
+                    </div>
+                {% endif %}
+            </div>
+            <div class="carte">
+                <div class="carte-label">Ventes (aujourd'hui)</div>
+                <div class="carte-valeur">{{ nombre_ventes }}</div>
+                <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
+                    Hier : {{ nombre_ventes_veille }} vente(s)
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Stock critique</div>
+                <div class="carte-valeur" style="color:{{ 'var(--rouge)' if nb_critique > 0 else 'var(--vert)' }}">
+                    {{ nb_critique }}
+                </div>
+                <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
+                    {{ 'article(s) à réapprovisionner' if nb_critique > 0 else 'Tous les stocks sont normaux' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="modules-titre">Modules</div>
+
+        <div class="modules-grille">
+            <a href="/ventes/nouvelle" class="module-carte">
+                <div class="module-icone">＋</div>
+                <div class="module-nom">Nouvelle vente</div>
+                <div class="module-desc">Enregistrer une transaction et mettre à jour le stock</div>
+            </a>
+            <a href="/ventes" class="module-carte">
+                <div class="module-icone">▤</div>
+                <div class="module-nom">Historique des ventes</div>
+                <div class="module-desc">Consulter, modifier ou annuler les transactions</div>
+            </a>
+            <a href="/recettes-journalieres" class="module-carte">
+                <div class="module-icone">📈</div>
+                <div class="module-nom">Recettes journalières</div>
+                <div class="module-desc">Évolution des recettes jour par jour, en graphique</div>
+            </a>
+            <a href="/stocks" class="module-carte">
+                <div class="module-icone">▣</div>
+                <div class="module-nom">Stocks & inventaire</div>
+                <div class="module-desc">Gérer vos produits et niveaux de stock</div>
+            </a>
+            <a href="/factures" class="module-carte">
+                <div class="module-icone">▦</div>
+                <div class="module-nom">Factures</div>
+                <div class="module-desc">Générer et consulter vos factures avec TVA</div>
+            </a>
+            <a href="/depenses" class="module-carte">
+                <div class="module-icone">－</div>
+                <div class="module-nom">Dépenses</div>
+                <div class="module-desc">Suivre les charges générales de l'entreprise</div>
+            </a>
+            <a href="/benefices" class="module-carte">
+                <div class="module-icone">⟴</div>
+                <div class="module-nom">Bénéfices</div>
+                <div class="module-desc">Marge par produit et résultat net pour le dirigeant</div>
+            </a>
+            <a href="/patrimoine" class="module-carte">
+                <div class="module-icone">⬡</div>
+                <div class="module-nom">Patrimoine</div>
+                <div class="module-desc">Trésorerie et valeur du stock de l'entreprise</div>
+            </a>
+
+        </div>
+        <a href="/mfa/parametres" class="module-carte">
+    <div class="module-icone">🔐</div>
+    <div class="module-nom">Sécurité MFA</div>
+    <div class="module-desc">Activer l'authentification à deux facteurs</div>
+</a>
+    </main>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Vérification MFA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-container">
+            <h1>GestPME</h1>
+            <p>Entrez le code à 6 chiffres affiché dans Google Authenticator</p>
+
+            {% if erreur %}
+                <p class="erreur">{{ erreur }}</p>
+            {% endif %}
+
+            <form method="POST" action="/login/mfa">
+                <div class="form-group">
+                    <label>Code de vérification</label>
+                    <input type="text" name="code_mfa" placeholder="000000" maxlength="6"
+                           autocomplete="off" autofocus
+                           style="font-size:24px; letter-spacing:0.3em; text-align:center;" required>
+                </div>
+                <button type="submit">Vérifier</button>
+            </form>
+
+            <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--encre-douce);">
+                🔒 Ce code est valable 30 secondes
+            </div>
+            <a href="/login" class="retour-login">← Retour à la connexion</a>
+        </div>
+    </div>
+</body>
+</html>

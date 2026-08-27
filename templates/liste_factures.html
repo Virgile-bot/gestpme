@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Factures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/dashboard" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Factures</h1>
+        <p>Toutes les factures générées pour votre entreprise</p>
+
+        <div class="liste-cartes">
+            {% for facture in factures %}
+            <div class="item-carte {% if facture.statut == 'annulee' %}statut-alerte{% elif facture.transmise_dgi %}statut-ok{% else %}statut-attente{% endif %}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ facture.numero_facture }} — {{ facture.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        HT : {{ facture.montant_ht }} F · TVA : {{ facture.montant_tva }} F
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px; margin-top:2px;">
+                        Émise le {{ facture.date_emission.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ facture.montant_ttc }} F</div>
+                    {% if facture.statut == 'annulee' %}
+                        <span class="badge badge-annulee">Annulée</span>
+                    {% elif facture.transmise_dgi %}
+                        <span class="badge badge-payee">Transmise DGI</span>
+                    {% else %}
+                        <span class="badge badge-en_attente">En attente</span>
+                    {% endif %}
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/factures/voir/{{ facture.id }}" class="btn-sm">Voir</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune facture générée pour le moment.<br>Générez une facture depuis l'historique des ventes.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

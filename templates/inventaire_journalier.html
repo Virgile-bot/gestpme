@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Inventaire journalier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/stocks" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Inventaire journalier</h1>
+        <p>Historique complet des mouvements de stock — entrées, sorties et corrections</p>
+
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-label">Total mouvements</div>
+                <div class="carte-valeur">{{ mouvements | length }}</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Entrées</div>
+                <div class="carte-valeur" style="color:var(--vert);">
+                    {{ mouvements | selectattr('type_mouvement', 'equalto', 'entree_approvisionnement') | list | length }}
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Sorties (ventes)</div>
+                <div class="carte-valeur" style="color:var(--rouge);">
+                    {{ mouvements | selectattr('type_mouvement', 'equalto', 'sortie_vente') | list | length }}
+                </div>
+            </div>
+        </div>
+
+        <div class="modules-titre">Journal des mouvements</div>
+
+        <div class="liste-cartes">
+            {% for m in mouvements %}
+            <div class="item-carte {% if m.type_mouvement == 'entree_approvisionnement' %}statut-ok{% elif m.type_mouvement == 'sortie_vente' %}statut-attente{% else %}statut-alerte{% endif %}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ m.nom_produit }}</div>
+                    <div class="item-carte-sous">
+                        {{ m.motif }} · Par {{ m.nom_utilisateur or '—' }}
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px; margin-top:2px;">
+                        {{ m.date_mouvement.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:12px; color:var(--encre-douce);">{{ m.stock_avant }}</span>
+                        <span style="font-size:11px; color:var(--encre-douce);">→</span>
+                        <span style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--vert);">{{ m.stock_apres }}</span>
+                    </div>
+                    {% if m.type_mouvement == 'entree_approvisionnement' %}
+                        <span class="badge badge-payee">↑ Entrée +{{ m.quantite }}</span>
+                    {% elif m.type_mouvement == 'sortie_vente' %}
+                        <span class="badge badge-en_attente">↓ Sortie −{{ m.quantite }}</span>
+                    {% else %}
+                        <span class="badge badge-annulee">⟳ Correction</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun mouvement de stock enregistré pour le moment.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

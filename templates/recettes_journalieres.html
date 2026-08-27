@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Recettes journalières</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/dashboard" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Recettes journalières</h1>
+        <p>Évolution des recettes encaissées, jour par jour, sur tout l'historique disponible</p>
+
+        <div class="graphique-carte">
+            <div class="graphique-wrap">
+                <canvas id="graphiqueRecettes"></canvas>
+            </div>
+        </div>
+
+        <div class="modules-titre">Détail par jour</div>
+
+        <div class="liste-cartes">
+            {% for r in recettes %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ r.jour.strftime('%A %d %B %Y') }}</div>
+                    <div class="item-carte-sous">{{ r.nombre_ventes }} vente(s) enregistrée(s)</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ r.total_jour }} F</div>
+                    <span class="badge badge-payee">Encaissé</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune recette enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('graphiqueRecettes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_jours | tojson }},
+                datasets: [{
+                    label: 'Recette (FCFA)',
+                    data: {{ valeurs_jours | tojson }},
+                    borderColor: '#1B4332',
+                    backgroundColor: 'rgba(27,67,50,0.07)',
+                    borderWidth: 2.5,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#C58F3C',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        },
+                        grid: { color: 'rgba(221,211,188,0.5)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

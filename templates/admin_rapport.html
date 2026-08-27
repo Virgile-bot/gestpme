@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Rapports Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body class="page-dashboard">
+    <header class="topbar" style="background-color: #2D2A26;">
+        <div class="topbar-logo">GestPME — Admin</div>
+        <div class="topbar-user">
+            <a href="/admin" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Rapports de performance</h1>
+        <p>Analyse des ventes par gérant et par produit</p>
+
+        <div class="modules-titre">Performance par gérant</div>
+        <div class="liste-cartes">
+            {% for g in rapport_gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.nb_ventes }} vente(s) enregistrée(s)</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ g.total_ventes }} F</div>
+                    <span style="font-size:11px; color:var(--encre-douce);">recette totale</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune donnée disponible.</div>
+            {% endfor %}
+        </div>
+
+        <div class="modules-titre">Performance par produit</div>
+        <div class="liste-cartes">
+            {% for p in rapport_produits %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.quantite_vendue }} unité(s) vendue(s)</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ p.recette_totale }} F</div>
+                    <span style="font-size:11px; color:var(--encre-douce);">recette totale</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune donnée disponible.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

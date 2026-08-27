@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Nouvelle vente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/ventes" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Nouvelle vente</h1>
+        <p>Enregistrez une transaction et le stock sera mis à jour automatiquement</p>
+
+        <div class="form-card">
+            <form method="POST" action="/ventes/enregistrer">
+                <div class="form-section">Informations client</div>
+                <div class="form-group">
+                    <label>Nom du client</label>
+                    <input type="text" name="client_nom" placeholder="Ex: Restaurant Tokpa" required>
+                </div>
+                <div class="form-group">
+                    <label>Mode de paiement</label>
+                    <select name="mode_paiement" required>
+                        <option value="especes">Espèces</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="virement">Virement</option>
+                        <option value="cheque">Chèque</option>
+                    </select>
+                </div>
+
+                <div class="form-section">Produit vendu</div>
+                <div class="form-group">
+                    <label>Produit</label>
+                    <select name="produit_id" required>
+                        <option value="">-- Choisir un produit --</option>
+                        {% for produit in produits %}
+                            <option value="{{ produit.id }}">
+                                {{ produit.nom }} — {{ produit.prix_unitaire }} F (stock : {{ produit.quantite_stock }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantité</label>
+                    <input type="number" name="quantite" placeholder="Quantité" min="1" required>
+                </div>
+
+                <button type="submit">Enregistrer la vente</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

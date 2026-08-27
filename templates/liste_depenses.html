@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Dépenses</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/dashboard" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Dépenses générales</h1>
+        <p>Charges de l'entreprise — loyer, transport, salaires, achats divers</p>
+
+        <div class="form-card" style="margin-bottom:28px;">
+            <div class="form-section">Nouvelle dépense</div>
+            <form method="POST" action="/depenses/ajouter">
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select name="categorie" required>
+                        <option value="achat_marchandise">Achat de marchandise</option>
+                        <option value="loyer">Loyer</option>
+                        <option value="transport">Transport</option>
+                        <option value="salaires">Salaires</option>
+                        <option value="electricite_eau">Électricité / Eau</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" name="description" placeholder="Ex: Facture SBEE juin 2026">
+                </div>
+                <div class="form-group">
+                    <label>Montant (FCFA)</label>
+                    <input type="number" name="montant" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Date de la dépense</label>
+                    <input type="date" name="date_depense" required>
+                </div>
+                <button type="submit">Enregistrer la dépense</button>
+            </form>
+        </div>
+
+        <div class="modules-titre">Historique des dépenses</div>
+
+        <div class="liste-cartes">
+            {% for d in depenses %}
+            <div class="item-carte statut-alerte">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ d.categorie.replace('_', ' ') | capitalize }}</div>
+                    <div class="item-carte-sous">{{ d.description or '—' }}</div>
+                    <div class="item-carte-sous" style="font-size:11px; margin-top:2px;">
+                        {{ d.date_depense.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color:var(--rouge);">− {{ d.montant }} F</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune dépense enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

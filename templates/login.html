@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Connexion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-container">
+            <h1>GestPME</h1>
+            <p>Connexion sécurisée à votre espace</p>
+
+            {% if erreur %}
+                <p class="erreur">{{ erreur }}</p>
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="votre@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" name="mot_de_passe" placeholder="••••••••" required>
+                </div>
+                <button type="submit">Se connecter</button>
+            </form>
+            <a href="/inscription" class="retour-login">Pas encore de compte ? Créer un compte entreprise</a>
+            <a href="/inscription-admin" class="retour-login" style="color:var(--or); margin-top:4px;">Vous êtes responsable ? Créer un compte admin</a>
+            <a href="/mot-de-passe-oublie" class="retour-login" style="color:var(--encre-douce); margin-top:4px;">Mot de passe oublié ?</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .notif-badge {
+            background: var(--rouge);
+            color: white;
+            border-radius: 50%;
+            width: 20px; height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .notif-item {
+            background: var(--blanc);
+            border: 1px solid var(--ligne);
+            border-left: 3px solid var(--or);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.nouvelle {
+            border-left-color: var(--vert);
+            background: #E3EFE6;
+        }
+        #toast-container {
+            position: fixed;
+            top: 80px; right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 320px;
+        }
+        .toast {
+            background: var(--vert);
+            color: white;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            font-size: 13px;
+            animation: slideIn 0.35s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-heure { font-size:11px; opacity:0.75; margin-top:4px; }
+        .toast-montant { font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--or-clair); }
+    </style>
+</head>
+<body class="page-dashboard">
+    <header class="topbar" style="background-color: #2D2A26;">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Admin
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/rapport" class="btn-logout">📊 Rapports</a>
+            <a href="/admin/ventes" class="btn-logout">Toutes les ventes</a>
+            <a href="/logout" class="btn-logout">Déconnexion</a>
+        </div>
+    </header>
+
+    <!-- Conteneur des toasts temps réel -->
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord Administrateur</h1>
+        <p>Supervision en temps réel des ventes de votre entreprise</p>
+
+        <!-- Métriques -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-label">Recette du jour</div>
+                <div class="carte-valeur" id="total-jour">{{ ventes_jour.total_jour }} F</div>
+                <div style="font-size:11px; color:var(--encre-douce); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Recette du mois</div>
+                <div class="carte-valeur">{{ ventes_mois.total_mois }} F</div>
+                <div style="font-size:11px; color:var(--encre-douce); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Notifications</div>
+                <div class="carte-valeur" style="color:var(--rouge);" id="nb-notifs">{{ notifications | length }}</div>
+                <div style="font-size:11px; color:var(--encre-douce); margin-top:4px;">non lues</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Gérants actifs</div>
+                <div class="carte-valeur">{{ gerants | length }}</div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="modules-titre" style="margin-bottom:0;">Notifications récentes</div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container">
+            {% for n in notifications %}
+            <div class="notif-item nouvelle">
+                <div style="font-weight:600; font-size:13px;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--encre-douce); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M:%S') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Dernières ventes -->
+        <div class="modules-titre">Dernières ventes (temps réel)</div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · par <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M:%S') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">Rejeter</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Gérants -->
+        <div class="modules-titre">Gérants de l'entreprise</div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                        <span class="badge badge-payee">🔐 MFA activé</span>
+                    {% else %}
+                        <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Connexion WebSocket
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour | float }};
+        let nbNotifs = {{ notifications | length }};
+
+        socket.on('connect', function() {
+            socket.emit('rejoindre_salle_admin', {});
+            console.log('Connecté au serveur temps réel');
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            // Mise à jour du total du jour
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            // Incrémenter les notifications
+            nbNotifs++;
+            document.getElementById('nb-notifs').textContent = nbNotifs;
+
+            // Ajouter la carte en haut de la liste
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Ajouter la notification dans le conteneur
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item nouvelle';
+                notif.innerHTML = `
+                    <div style="font-weight:600; font-size:13px;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--encre-douce); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            // Toast de notification
+            afficherToast(data);
+        });
+
+        function afficherToast(data) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700;">🛒 Nouvelle vente</div>
+                <div>${data.client} — ${data.produit}</div>
+                <div class="toast-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                <div class="toast-heure">${data.heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

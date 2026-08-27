@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Bénéfices</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/dashboard" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Bénéfices de l'entreprise</h1>
+        <p>Compte de résultat simplifié — pour une prise de décision éclairée du dirigeant</p>
+
+        <div class="resultat-card">
+            <div class="resultat-ligne">
+                <span>Marge brute sur ventes (recettes − coût d'achat)</span>
+                <span class="valeur">{{ "%.0f"|format(marge_brute_totale) }} F</span>
+            </div>
+            <div class="resultat-ligne">
+                <span>Dépenses générales (loyer, transport, charges...)</span>
+                <span class="valeur" style="color:var(--rouge);">− {{ "%.0f"|format(total_depenses) }} F</span>
+            </div>
+            <div class="resultat-ligne net {{ 'perte' if benefice_net < 0 else '' }}">
+                <span>{{ 'Bénéfice net' if benefice_net >= 0 else 'Perte nette' }}</span>
+                <span class="valeur">{{ "%.0f"|format(benefice_net) }} F</span>
+            </div>
+        </div>
+
+        {% if benefice_net < 0 %}
+        <div class="conseil">
+            ⚠️ L'entreprise est en perte. Examinez vos charges et marges avant toute distribution de revenus au dirigeant.
+        </div>
+        {% else %}
+        <div class="conseil">
+            💡 Principe de séparation des biens : seul ce bénéfice net peut alimenter la rémunération du dirigeant. Le reste constitue le patrimoine de l'entreprise.
+        </div>
+        {% endif %}
+
+        <div class="modules-titre">Marge par produit</div>
+
+        <div class="liste-cartes">
+            {% for m in marges_par_produit %}
+            <div class="item-carte {{ 'statut-ok' if m.marge_totale >= 0 else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ m.nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ m.quantite_vendue }} unité(s) vendue(s) · Coût total : {{ m.cout_total }} F
+                    </div>
+                    <div class="item-carte-sous">Recette : {{ m.recette_totale }} F</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color:{{ 'var(--rouge)' if m.marge_totale < 0 else 'var(--vert)' }};">
+                        {{ "%.0f"|format(m.marge_totale) }} F
+                    </div>
+                    <span style="font-size:11px; color:var(--encre-douce);">marge</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <a href="/depenses" class="btn-action" style="background:var(--or);">Gérer les dépenses</a>
+    </main>
+</body>
+</html>

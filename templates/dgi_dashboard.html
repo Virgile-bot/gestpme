@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Espace DGI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar" style="background-color:var(--encre);">
+        <div class="topbar-logo">GestPME — Espace DGI</div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/logout" class="btn-logout">Déconnexion</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <div class="dgi-banner">
+            🛡️ Accès en lecture seule — Données chiffrées et horodatées — Supervision fiscale nationale
+        </div>
+
+        <h1>Vue consolidée</h1>
+        <p>Toutes les PME enregistrées sur la plateforme</p>
+
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-label">CA total déclaré (HT)</div>
+                <div class="carte-valeur">{{ totaux.ca_global }} F</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">TVA totale collectée</div>
+                <div class="carte-valeur">{{ totaux.tva_globale }} F</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Factures émises</div>
+                <div class="carte-valeur">{{ totaux.total_factures }}</div>
+            </div>
+        </div>
+
+        <div class="modules-titre">Détail par PME</div>
+
+        <div class="liste-cartes">
+            {% for pme in pme_liste %}
+            <div class="item-carte {{ 'statut-ok' if pme.nb_factures > 0 else 'statut-attente' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ pme.nom_entreprise }}</div>
+                    <div class="item-carte-sous">IFU : {{ pme.ifu }}</div>
+                    <div class="item-carte-sous">
+                        CA déclaré : {{ pme.ca_total_ht }} F · TVA : {{ pme.tva_totale }} F · {{ pme.nb_factures }} facture(s)
+                    </div>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/dgi/pme/{{ pme.id }}" class="btn-sm primaire">Voir le détail</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune PME enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

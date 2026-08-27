@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture {{ facture.numero_facture }} — GestPME</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        @media print {
+            .topbar, .btn-action, .btn-logout { display: none; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/factures" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+
+    <main class="contenu">
+        <div class="facture-doc {{ 'annulee' if facture.statut == 'annulee' }}">
+            {% if facture.statut == 'annulee' %}
+                <div class="tampon-annule">Annulée</div>
+            {% endif %}
+
+            <div class="facture-header">
+                <div>
+                    <h1>GestPME</h1>
+                    <p>Plateforme sécurisée de gestion commerciale</p>
+                    <p>Cotonou, République du Bénin</p>
+                </div>
+                <div class="facture-numero">
+                    <strong>{{ facture.numero_facture }}</strong>
+                    <p>Émise le {{ facture.date_emission.strftime('%d/%m/%Y') }}</p>
+                </div>
+            </div>
+
+            <p style="margin-bottom:6px;"><strong>Client :</strong> {{ facture.client_nom }}</p>
+            <p style="margin-bottom:20px;"><strong>Mode de paiement :</strong> {{ facture.mode_paiement }}</p>
+
+            <table class="facture-table">
+                <thead>
+                    <tr>
+                        <th>Désignation</th>
+                        <th>Quantité</th>
+                        <th>Prix unitaire</th>
+                        <th>Total HT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ facture.nom_produit }}</td>
+                        <td>{{ facture.quantite }}</td>
+                        <td>{{ facture.prix_unitaire }} F</td>
+                        <td>{{ facture.montant_ht }} F</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="facture-totaux">
+                <p>Montant HT : {{ facture.montant_ht }} F</p>
+                <p>TVA ({{ facture.taux_tva }}%) : {{ facture.montant_tva }} F</p>
+                <p class="ttc">Total TTC : {{ facture.montant_ttc }} F</p>
+            </div>
+
+            <div class="facture-dgi {{ 'annulee' if facture.statut == 'annulee' }}">
+                {% if facture.statut == 'annulee' %}
+                    ✗ Cette facture a été annulée — la vente associée a été annulée et le stock restauré.
+                {% elif facture.transmise_dgi %}
+                    ✓ Cette facture a été transmise à la DGI pour supervision fiscale.
+                {% else %}
+                    ⏳ Cette facture sera transmise automatiquement à la DGI lors de la prochaine synchronisation.
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="max-width:620px; margin:0 auto;">
+            <button onclick="window.print()" class="btn-action" style="border:none; cursor:pointer;">
+                🖨️ Imprimer
+            </button>
+            <a href="/factures/pdf/{{ facture.id }}" class="btn-action" style="background:var(--or);">
+                📄 Télécharger en PDF
+            </a>
+        </div>
+    </main>
+</body>
+</html>

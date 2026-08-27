@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Patrimoine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/dashboard" class="btn-logout">← Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Patrimoine de l'entreprise</h1>
+        <p>Ce que l'entreprise possède à l'instant présent — distinct du bénéfice (flux d'activité)</p>
+
+        <div class="conseil">
+            💡 Le <strong>patrimoine</strong> mesure ce que possède l'entreprise maintenant (trésorerie + stock). Le <strong>bénéfice</strong> mesure ce que l'activité a généré sur une période. Deux notions complémentaires, jamais à confondre.
+        </div>
+
+        <div class="resultat-card">
+            <div class="resultat-ligne">
+                <span>Trésorerie (ventes encaissées − dépenses)</span>
+                <span class="valeur">{{ "%.0f"|format(tresorerie) }} F</span>
+            </div>
+            <div class="resultat-ligne">
+                <span>Valeur du stock actuel (au prix d'achat)</span>
+                <span class="valeur">{{ "%.0f"|format(valeur_stock_totale) }} F</span>
+            </div>
+            <div class="resultat-ligne net">
+                <span>Patrimoine total</span>
+                <span class="valeur">{{ "%.0f"|format(patrimoine_total) }} F</span>
+            </div>
+        </div>
+
+        <div class="modules-titre">Valeur du stock par produit</div>
+
+        <div class="liste-cartes">
+            {% for p in detail_stock %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ p.quantite_stock }} unité(s) × {{ p.prix_achat }} F (prix d'achat)
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ p.valeur_stock }} F</div>
+                    <span style="font-size:11px; color:var(--encre-douce);">valeur en stock</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit actif en stock.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
