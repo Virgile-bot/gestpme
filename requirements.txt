@@ -1,0 +1,10 @@
+flask
+flask-mail
+flask-socketio
+eventlet
+pymysql
+pyotp
+qrcode[pil]
+reportlab
+gunicorn
+python-dotenv
