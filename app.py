@@ -29,8 +29,7 @@ app.config['MAIL_PASSWORD'] = 'trjtcytggncuqkh'
 app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', 'virgilezossou@gmail.com')
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
-
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 # Code secret pour l'inscription des admins PME
 # À changer avant la mise en production !
 ADMIN_CODE_SECRET = "GESTPME-ADMIN-2026"
