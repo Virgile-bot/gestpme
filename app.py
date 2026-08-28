@@ -31,7 +31,7 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
 app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
 
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
@@ -1600,7 +1600,8 @@ def mot_de_passe_oublie():
             connexion.close()
 
             # Construire le lien de réinitialisation
-            lien = url_for('reinitialiser_mot_de_passe', token=token, _external=True)
+            base_url = os.environ.get('APP_URL', 'http://127.0.0.1:5001')
+            lien = f"{base_url}/reinitialiser/{token}"
 
             # Envoyer l'email
             msg = Message(
