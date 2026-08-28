@@ -17,30 +17,33 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 
+import os
+
 app = Flask(__name__)
-app.secret_key = 'une_cle_secrete_a_changer_plus_tard'
+app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
 
 # Configuration Flask-Mail (Gmail)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'virgilezossou@gmail.com'
-app.config['MAIL_PASSWORD'] = 'trjtcytggncuqkh'
-app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', 'virgilezossou@gmail.com')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
+app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
+
 # Code secret pour l'inscription des admins PME
-# À changer avant la mise en production !
-ADMIN_CODE_SECRET = "GESTPME-ADMIN-2026"
+ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
 
 
 def get_connexion():
     connexion = pymysql.connect(
-        host='localhost',
-        user='root',
-        password='',
-        database='gestpme',
+        host=os.environ.get('DB_HOST', 'localhost'),
+        user=os.environ.get('DB_USER', 'root'),
+        password=os.environ.get('DB_PASSWORD', ''),
+        database=os.environ.get('DB_NAME', 'gestpme'),
+        port=int(os.environ.get('DB_PORT', 3306)),
         cursorclass=pymysql.cursors.DictCursor
     )
     return connexion
