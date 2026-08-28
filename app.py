@@ -31,7 +31,7 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
 app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
 
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
@@ -125,6 +125,22 @@ def admin_requis(fonction):
             return redirect('/login')
         if session.get('role') not in ['admin_pme']:
             return "Accès réservé à l'administrateur de la PME.", 403
+        return fonction(*args, **kwargs)
+
+    return fonction_protegee
+
+
+def super_admin_requis(fonction):
+    """
+    Protège les routes réservées au super-admin GestPME (fondateur).
+    Accès total à toutes les PME de la plateforme.
+    """
+    @wraps(fonction)
+    def fonction_protegee(*args, **kwargs):
+        if 'utilisateur_id' not in session:
+            return redirect('/login')
+        if session.get('role') != 'super_admin':
+            return "Accès réservé au super-administrateur GestPME.", 403
         return fonction(*args, **kwargs)
 
     return fonction_protegee
@@ -278,6 +294,8 @@ def login():
                     return redirect('/dgi')
                 elif utilisateur['role'] == 'admin_pme':
                     return redirect('/admin')
+                elif utilisateur['role'] == 'super_admin':
+                    return redirect('/super-admin')
                 return redirect('/dashboard')
         else:
             return render_template('login.html', erreur="Email ou mot de passe incorrect")
@@ -314,6 +332,8 @@ def login_mfa():
                 return redirect('/dgi')
             elif session['role'] == 'admin_pme':
                 return redirect('/admin')
+            elif session['role'] == 'super_admin':
+                return redirect('/super-admin')
             return redirect('/dashboard')
         else:
             return render_template('login_mfa.html', erreur="Code incorrect ou expiré. Réessayez.")
@@ -1892,6 +1912,148 @@ def rejoindre_salle_admin(data):
         salle = f"admin_pme_{session['pme_id']}"
         join_room(salle)
         emit('connecte', {'message': f'Connecté à la salle {salle}'})
+
+
+# ============================================
+# MODULE SUPER-ADMIN — Tableau de bord GestPME
+# ============================================
+
+@app.route('/super-admin')
+@super_admin_requis
+def super_admin_dashboard():
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    # Statistiques globales
+    curseur.execute("SELECT COUNT(*) AS total FROM pme")
+    total_pme = curseur.fetchone()['total']
+
+    curseur.execute("SELECT COUNT(*) AS total FROM utilisateurs WHERE role = 'gerant'")
+    total_gerants = curseur.fetchone()['total']
+
+    curseur.execute("SELECT COALESCE(SUM(montant_total), 0) AS total FROM ventes WHERE statut != 'annulee'")
+    ca_global = curseur.fetchone()['total']
+
+    curseur.execute("SELECT COUNT(*) AS total FROM ventes WHERE statut != 'annulee'")
+    total_ventes = curseur.fetchone()['total']
+
+    curseur.execute("SELECT COUNT(*) AS total FROM factures WHERE statut = 'active'")
+    total_factures = curseur.fetchone()['total']
+
+    # Liste détaillée des PME avec leurs stats
+    curseur.execute("""
+        SELECT 
+            p.id,
+            p.nom_entreprise,
+            p.ifu,
+            p.telephone,
+            p.adresse,
+            p.date_creation,
+            COUNT(DISTINCT u.id) AS nb_utilisateurs,
+            COUNT(DISTINCT v.id) AS nb_ventes,
+            COALESCE(SUM(v.montant_total), 0) AS ca_total
+        FROM pme p
+        LEFT JOIN utilisateurs u ON u.pme_id = p.id AND u.role = 'gerant'
+        LEFT JOIN ventes v ON v.pme_id = p.id AND v.statut != 'annulee'
+        GROUP BY p.id, p.nom_entreprise, p.ifu, p.telephone, p.adresse, p.date_creation
+        ORDER BY ca_total DESC
+    """)
+    pme_liste = curseur.fetchall()
+
+    # PME les plus actives (top 5)
+    curseur.execute("""
+        SELECT 
+            p.nom_entreprise,
+            COUNT(v.id) AS nb_ventes,
+            COALESCE(SUM(v.montant_total), 0) AS ca_total
+        FROM pme p
+        LEFT JOIN ventes v ON v.pme_id = p.id AND v.statut != 'annulee'
+        GROUP BY p.id, p.nom_entreprise
+        ORDER BY ca_total DESC
+        LIMIT 5
+    """)
+    top_pme = curseur.fetchall()
+
+    # Inscriptions par jour (7 derniers jours)
+    curseur.execute("""
+        SELECT DATE(date_creation) AS jour, COUNT(*) AS nb
+        FROM pme
+        GROUP BY DATE(date_creation)
+        ORDER BY jour DESC
+        LIMIT 7
+    """)
+    inscriptions = curseur.fetchall()
+
+    connexion.close()
+
+    labels = [str(i['jour']) for i in reversed(inscriptions)]
+    valeurs = [i['nb'] for i in reversed(inscriptions)]
+
+    return render_template(
+        'super_admin_dashboard.html',
+        nom=session['nom'],
+        total_pme=total_pme,
+        total_gerants=total_gerants,
+        ca_global=ca_global,
+        total_ventes=total_ventes,
+        total_factures=total_factures,
+        pme_liste=pme_liste,
+        top_pme=top_pme,
+        labels=labels,
+        valeurs=valeurs
+    )
+
+
+@app.route('/super-admin/pme/<int:pme_id>')
+@super_admin_requis
+def super_admin_detail_pme(pme_id):
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    curseur.execute("SELECT * FROM pme WHERE id = %s", (pme_id,))
+    pme = curseur.fetchone()
+
+    if not pme:
+        connexion.close()
+        return "PME introuvable", 404
+
+    # Utilisateurs de cette PME
+    curseur.execute("""
+        SELECT id, nom_complet, email, role, mfa_active, date_creation
+        FROM utilisateurs WHERE pme_id = %s
+    """, (pme_id,))
+    utilisateurs = curseur.fetchall()
+
+    # Dernières ventes
+    curseur.execute("""
+        SELECT v.*, p.nom AS nom_produit, lv.quantite
+        FROM ventes v
+        JOIN lignes_vente lv ON lv.vente_id = v.id
+        JOIN produits p ON p.id = lv.produit_id
+        WHERE v.pme_id = %s
+        ORDER BY v.date_vente DESC
+        LIMIT 10
+    """, (pme_id,))
+    ventes = curseur.fetchall()
+
+    # Statistiques
+    curseur.execute("""
+        SELECT 
+            COALESCE(SUM(montant_total), 0) AS ca_total,
+            COUNT(*) AS nb_ventes
+        FROM ventes WHERE pme_id = %s AND statut != 'annulee'
+    """, (pme_id,))
+    stats = curseur.fetchone()
+
+    connexion.close()
+
+    return render_template(
+        'super_admin_detail_pme.html',
+        pme=pme,
+        utilisateurs=utilisateurs,
+        ventes=ventes,
+        stats=stats
+    )
 
 
 if __name__ == '__main__':

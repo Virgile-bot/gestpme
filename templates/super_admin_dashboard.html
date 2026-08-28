@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GestPME — Super Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .topbar-super { background: linear-gradient(135deg, #1B4332, #2D6A4F); }
+        .badge-super { background:#1B4332; color:white; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .pme-rang { font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:var(--or); width:40px; text-align:center; }
+    </style>
+</head>
+<body class="page-dashboard">
+    <header class="topbar topbar-super">
+        <div class="topbar-logo">
+            🌍 GestPME — Super Admin
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <span class="badge-super">FONDATEUR</span>
+            <a href="/logout" class="btn-logout">Déconnexion</a>
+        </div>
+    </header>
+
+    <main class="contenu">
+        <h1>Tableau de bord GestPME</h1>
+        <p>Vue globale de toutes les PME inscrites sur la plateforme</p>
+
+        <!-- Métriques globales -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-label">PME inscrites</div>
+                <div class="carte-valeur">{{ total_pme }}</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Gérants actifs</div>
+                <div class="carte-valeur">{{ total_gerants }}</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">CA total plateforme</div>
+                <div class="carte-valeur" style="font-size:20px;">{{ "%.0f"|format(ca_global|float) }} F</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Ventes enregistrées</div>
+                <div class="carte-valeur">{{ total_ventes }}</div>
+            </div>
+            <div class="carte">
+                <div class="carte-label">Factures émises</div>
+                <div class="carte-valeur">{{ total_factures }}</div>
+            </div>
+        </div>
+
+        <!-- Graphique inscriptions -->
+        {% if labels %}
+        <div class="graphique-carte">
+            <div class="modules-titre">Inscriptions de PME (7 derniers jours)</div>
+            <div class="graphique-wrap" style="height:180px;">
+                <canvas id="graphiqueInscriptions"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Top PME -->
+        <div class="modules-titre">🏆 PME les plus actives</div>
+        <div class="liste-cartes" style="margin-bottom:28px;">
+            {% for pme in top_pme %}
+            <div class="item-carte statut-ok">
+                <div class="pme-rang">{{ loop.index }}</div>
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ pme.nom_entreprise }}</div>
+                    <div class="item-carte-sous">{{ pme.nb_ventes }} vente(s)</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ "%.0f"|format(pme.ca_total|float) }} F</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Liste toutes les PME -->
+        <div class="modules-titre">Toutes les PME ({{ total_pme }})</div>
+        <div class="liste-cartes">
+            {% for pme in pme_liste %}
+            <div class="item-carte {{ 'statut-ok' if pme.nb_ventes > 0 else 'statut-attente' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ pme.nom_entreprise }}</div>
+                    <div class="item-carte-sous">
+                        IFU : {{ pme.ifu }} · {{ pme.adresse or 'Adresse non renseignée' }}
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ pme.nb_utilisateurs }} gérant(s) · {{ pme.nb_ventes }} vente(s) · Inscrite le {{ pme.date_creation.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="font-size:16px;">{{ "%.0f"|format(pme.ca_total|float) }} F</div>
+                    <span class="badge {{ 'badge-payee' if pme.nb_ventes > 0 else 'badge-en_attente' }}">
+                        {{ 'Active' if pme.nb_ventes > 0 else 'Inactive' }}
+                    </span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/super-admin/pme/{{ pme.id }}" class="btn-sm primaire">Détail</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune PME inscrite pour le moment.</div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        {% if labels %}
+        const ctx = document.getElementById('graphiqueInscriptions').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    label: 'Inscriptions',
+                    data: {{ valeurs | tojson }},
+                    backgroundColor: 'rgba(27,67,50,0.8)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+        {% endif %}
+    </script>
+</body>
+</html>
