@@ -20,7 +20,7 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 import os
 from datetime import datetime, timedelta
 import fedapay
-from fedapay import Transaction
+import fedapay
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
