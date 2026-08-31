@@ -31,7 +31,7 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
 app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
