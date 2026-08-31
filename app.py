@@ -18,6 +18,9 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 
 import os
+from datetime import datetime, timedelta
+import fedapay
+from fedapay import Transaction
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
@@ -35,6 +38,21 @@ socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
+
+# Configuration FedaPay
+FEDAPAY_SECRET_KEY = os.environ.get('FEDAPAY_SECRET_KEY', 'sk_sandbox_votre_cle')
+FEDAPAY_PUBLIC_KEY = os.environ.get('FEDAPAY_PUBLIC_KEY', 'pk_sandbox_votre_cle')
+FEDAPAY_ENV = os.environ.get('FEDAPAY_ENV', 'sandbox')
+
+fedapay.api_key = FEDAPAY_SECRET_KEY
+fedapay.api_base = 'https://sandbox-api.fedapay.com' if FEDAPAY_ENV == 'sandbox' else 'https://api.fedapay.com'
+
+# Plans d'abonnement GestPME
+PLANS = {
+    'starter': {'nom': 'Starter', 'prix': 0, 'description': '1 utilisateur · 50 produits · 100 ventes/mois'},
+    'pme': {'nom': 'PME', 'prix': 5000, 'description': '5 utilisateurs · Illimité · Factures PDF'},
+    'business': {'nom': 'Business', 'prix': 15000, 'description': '20 utilisateurs · Multi-boutiques · API'},
+}
 
 
 def get_connexion():
@@ -2054,6 +2072,123 @@ def super_admin_detail_pme(pme_id):
         ventes=ventes,
         stats=stats
     )
+
+
+# ============================================
+# MODULE ABONNEMENTS — FedaPay Mobile Money
+# ============================================
+
+@app.route('/abonnement')
+@gerant_requis
+def abonnement():
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    # Vérifier l'abonnement actuel de la PME
+    curseur.execute("""
+        SELECT * FROM abonnements
+        WHERE pme_id = %s AND statut = 'actif'
+        AND date_fin > NOW()
+        ORDER BY date_fin DESC LIMIT 1
+    """, (session['pme_id'],))
+    abonnement_actuel = curseur.fetchone()
+    connexion.close()
+
+    return render_template(
+        'abonnement.html',
+        plans=PLANS,
+        abonnement_actuel=abonnement_actuel,
+        fedapay_public_key=FEDAPAY_PUBLIC_KEY
+    )
+
+
+@app.route('/abonnement/payer/<plan>', methods=['GET', 'POST'])
+@gerant_requis
+def payer_abonnement(plan):
+    if plan not in PLANS:
+        return "Plan invalide", 400
+
+    plan_info = PLANS[plan]
+
+    if plan_info['prix'] == 0:
+        # Plan gratuit — activer directement
+        connexion = get_connexion()
+        curseur = connexion.cursor()
+        date_debut = datetime.now()
+        date_fin = date_debut + timedelta(days=365)
+        curseur.execute("""
+            INSERT INTO abonnements (pme_id, plan, montant, statut, date_debut, date_fin)
+            VALUES (%s, %s, %s, 'actif', %s, %s)
+        """, (session['pme_id'], plan, 0, date_debut, date_fin))
+        connexion.commit()
+        connexion.close()
+        return redirect('/dashboard')
+
+    if request.method == 'POST':
+        telephone = request.form['telephone']
+        operateur = request.form['operateur']
+
+        try:
+            # Créer la transaction FedaPay
+            transaction = Transaction.create({
+                'description': f'Abonnement GestPME — Plan {plan_info["nom"]}',
+                'amount': int(plan_info['prix']),
+                'currency': {'iso': 'XOF'},
+                'callback_url': f"{os.environ.get('APP_URL', 'http://127.0.0.1:5001')}/abonnement/confirmer",
+                'customer': {
+                    'email': session.get('email', 'client@gestpme.bj'),
+                },
+            })
+
+            # Sauvegarder en attente
+            connexion = get_connexion()
+            curseur = connexion.cursor()
+            curseur.execute("""
+                INSERT INTO abonnements (pme_id, plan, montant, statut, transaction_id)
+                VALUES (%s, %s, %s, 'en_attente', %s)
+            """, (session['pme_id'], plan, plan_info['prix'], str(transaction.id)))
+            connexion.commit()
+            connexion.close()
+
+            # Rediriger vers la page de paiement FedaPay
+            return redirect(transaction.links.payment_url)
+
+        except Exception as e:
+            return render_template('payer_abonnement.html',
+                                   plan=plan,
+                                   plan_info=plan_info,
+                                   erreur=f"Erreur : {str(e)}")
+
+    return render_template('payer_abonnement.html', plan=plan, plan_info=plan_info, erreur=None)
+
+
+@app.route('/abonnement/confirmer')
+def confirmer_abonnement():
+    transaction_id = request.args.get('id')
+    statut = request.args.get('status')
+
+    if statut == 'approved' and transaction_id:
+        connexion = get_connexion()
+        curseur = connexion.cursor()
+
+        curseur.execute("SELECT * FROM abonnements WHERE transaction_id = %s", (transaction_id,))
+        abonnement_row = curseur.fetchone()
+
+        if abonnement_row:
+            date_debut = datetime.now()
+            date_fin = date_debut + timedelta(days=30)
+
+            curseur.execute("""
+                UPDATE abonnements
+                SET statut = 'actif', date_debut = %s, date_fin = %s
+                WHERE transaction_id = %s
+            """, (date_debut, date_fin, transaction_id))
+            connexion.commit()
+            connexion.close()
+
+            return redirect('/dashboard')
+
+    return redirect('/abonnement')
 
 
 if __name__ == '__main__':
