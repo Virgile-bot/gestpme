@@ -2,54 +2,53 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GestPME — Modifier la vente</title>
+    <title>GestPME — Nouveau produit</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="page-dashboard">
     <header class="topbar">
         <div class="topbar-logo">GestPME</div>
         <div class="topbar-user">
-            <a href="/ventes" class="btn-logout">← Retour</a>
+            <a href="/stocks" class="btn-logout">← Retour</a>
         </div>
     </header>
     <main class="contenu">
-        <h1>Modifier la vente #{{ '%04d' | format(vente.id) }}</h1>
-        <p>Cette vente n'a pas encore été facturée — vous pouvez la corriger librement.</p>
+        <h1>Nouveau produit</h1>
+        <p>Ajoutez un article à votre catalogue de produits</p>
 
         <div class="form-card">
-            <form method="POST" action="/ventes/mettre_a_jour/{{ vente.id }}">
-                <div class="form-section">Informations client</div>
+            <form method="POST" action="/stocks/ajouter">
+                <div class="form-section">Informations produit</div>
                 <div class="form-group">
-                    <label>Nom du client</label>
-                    <input type="text" name="client_nom" value="{{ vente.client_nom }}" required>
+                    <label>Nom du produit</label>
+                    <input type="text" name="nom" placeholder="Ex: Boisson Flag 65cl" required>
                 </div>
                 <div class="form-group">
-                    <label>Mode de paiement</label>
-                    <select name="mode_paiement" required>
-                        <option value="especes" {{ 'selected' if vente.mode_paiement == 'especes' }}>Espèces</option>
-                        <option value="mobile_money" {{ 'selected' if vente.mode_paiement == 'mobile_money' }}>Mobile Money</option>
-                        <option value="virement" {{ 'selected' if vente.mode_paiement == 'virement' }}>Virement</option>
-                        <option value="cheque" {{ 'selected' if vente.mode_paiement == 'cheque' }}>Chèque</option>
-                    </select>
+                    <label>Catégorie</label>
+                    <input type="text" name="categorie" placeholder="Ex: Boissons" required>
                 </div>
 
-                <div class="form-section">Produit vendu</div>
+                <div class="form-section">Prix</div>
                 <div class="form-group">
-                    <label>Produit</label>
-                    <select name="produit_id" required>
-                        {% for produit in produits %}
-                            <option value="{{ produit.id }}" {{ 'selected' if produit.id == vente.produit_id }}>
-                                {{ produit.nom }} — {{ produit.prix_unitaire }} F (stock : {{ produit.quantite_stock }})
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <label>Prix d'achat unitaire (FCFA)</label>
+                    <input type="number" name="prix_achat" step="0.01" min="0" required>
                 </div>
                 <div class="form-group">
-                    <label>Quantité</label>
-                    <input type="number" name="quantite" value="{{ vente.quantite }}" min="1" required>
+                    <label>Prix de vente unitaire (FCFA)</label>
+                    <input type="number" name="prix_unitaire" step="0.01" min="0" required>
                 </div>
 
-                <button type="submit">Enregistrer les corrections</button>
+                <div class="form-section">Stock</div>
+                <div class="form-group">
+                    <label>Quantité en stock</label>
+                    <input type="number" name="quantite_stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Seuil d'alerte</label>
+                    <input type="number" name="seuil_alerte" min="0" value="10" required>
+                </div>
+
+                <button type="submit">Enregistrer le produit</button>
             </form>
         </div>
     </main>
