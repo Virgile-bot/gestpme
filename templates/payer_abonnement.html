@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>GestPME — Paiement</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- KKiaPay Widget -->
+    <script src="https://cdn.kkiapay.me/k.js"></script>
 </head>
 <body class="page-dashboard">
     <header class="topbar">
@@ -22,46 +24,78 @@
         {% endif %}
 
         <div class="form-card">
-            <form method="POST" action="/abonnement/payer/{{ plan }}">
+            <div class="form-section">Récapitulatif</div>
 
-                <div class="form-section">Votre numéro Mobile Money</div>
-
-                <div class="form-group">
-                    <label>Opérateur</label>
-                    <select name="operateur" required>
-                        <option value="mtn">MTN MoMo</option>
-                        <option value="moov">Moov Money</option>
-                    </select>
+            <div class="resultat-card" style="margin-bottom:24px;">
+                <div class="resultat-ligne">
+                    <span>Plan {{ plan_info.nom }}</span>
+                    <span class="valeur">{{ plan_info.prix | int }} FCFA</span>
                 </div>
-
-                <div class="form-group">
-                    <label>Numéro de téléphone</label>
-                    <input type="tel" name="telephone"
-                           placeholder="Ex: 97000000"
-                           pattern="[0-9]{8}"
-                           required>
+                <div class="resultat-ligne">
+                    <span>Durée</span>
+                    <span class="valeur">1 mois</span>
                 </div>
-
-                <div class="resultat-card" style="margin-top:20px;">
-                    <div class="resultat-ligne">
-                        <span>Plan {{ plan_info.nom }}</span>
-                        <span class="valeur">{{ plan_info.prix | int }} FCFA</span>
-                    </div>
-                    <div class="resultat-ligne net">
-                        <span>Total à payer</span>
-                        <span class="valeur">{{ plan_info.prix | int }} FCFA</span>
-                    </div>
+                <div class="resultat-ligne net">
+                    <span>Total à payer</span>
+                    <span class="valeur">{{ plan_info.prix | int }} FCFA</span>
                 </div>
+            </div>
 
-                <button type="submit">
-                    💳 Payer {{ plan_info.prix | int }} FCFA par Mobile Money
-                </button>
-            </form>
+            <div class="conseil" style="margin-bottom:24px;">
+                💡 Le paiement s'effectue via <strong>MTN MoMo</strong> ou <strong>Moov Money</strong>. Vous recevrez une demande de confirmation sur votre téléphone.
+            </div>
+
+            <!-- Bouton KKiaPay -->
+            <button id="kkiapay-btn" class="btn-action" style="width:100%; justify-content:center; font-size:16px; padding:14px; border:none; cursor:pointer;">
+                💳 Payer {{ plan_info.prix | int }} FCFA par Mobile Money
+            </button>
 
             <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--encre-douce);">
-                🔒 Paiement sécurisé via FedaPay
+                🔒 Paiement sécurisé via KKiaPay — MTN MoMo & Moov Money
             </div>
         </div>
     </main>
+
+    <script>
+        // Initialiser KKiaPay au clic du bouton
+        document.getElementById('kkiapay-btn').addEventListener('click', function() {
+            openKkiapayWidget({
+                amount: {{ plan_info.prix | int }},
+                api_key: "2c67f0b0a5e111f186326d7e08920f27",
+                sandbox: true,
+                email: "",
+                phone: "",
+                name: "Abonnement GestPME — Plan {{ plan_info.nom }}",
+                callback: "{{ app_url }}/abonnement/kkiapay/confirmer?plan={{ plan }}"
+            });
+        });
+
+        // Écouter la confirmation de paiement
+        addSuccessListener(function(response) {
+            console.log('Paiement réussi :', response);
+            // Envoyer la confirmation au serveur
+            fetch('/abonnement/kkiapay/confirmer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    transaction_id: response.transactionId,
+                    plan: '{{ plan }}'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Erreur lors de la confirmation. Contactez le support.');
+                }
+            });
+        });
+
+        addFailedListener(function(response) {
+            console.log('Paiement échoué :', response);
+            alert('Le paiement a échoué. Veuillez réessayer.');
+        });
+    </script>
 </body>
 </html>

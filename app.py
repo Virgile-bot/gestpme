@@ -19,8 +19,6 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 
 import os
 from datetime import datetime, timedelta
-import fedapay
-import fedapay
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
@@ -39,13 +37,9 @@ socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
 
-# Configuration FedaPay
-FEDAPAY_SECRET_KEY = os.environ.get('FEDAPAY_SECRET_KEY', 'sk_sandbox_votre_cle')
-FEDAPAY_PUBLIC_KEY = os.environ.get('FEDAPAY_PUBLIC_KEY', 'pk_sandbox_votre_cle')
-FEDAPAY_ENV = os.environ.get('FEDAPAY_ENV', 'sandbox')
-
-fedapay.api_key = FEDAPAY_SECRET_KEY
-fedapay.api_base = 'https://sandbox-api.fedapay.com' if FEDAPAY_ENV == 'sandbox' else 'https://api.fedapay.com'
+# Configuration KKiaPay
+KKIAPAY_PUBLIC_KEY = os.environ.get('KKIAPAY_PUBLIC_KEY', '2c67f0b0a5e111f186326d7e08920f27')
+KKIAPAY_PRIVATE_KEY = os.environ.get('KKIAPAY_PRIVATE_KEY', '')
 
 # Plans d'abonnement GestPME
 PLANS = {
@@ -166,7 +160,7 @@ def super_admin_requis(fonction):
 
 @app.route('/')
 def accueil():
-    return render_template('landing.html')
+    return render_template('accueil.html')
 
 
 @app.route('/inscription', methods=['GET', 'POST'])
@@ -2111,7 +2105,6 @@ def payer_abonnement(plan):
     plan_info = PLANS[plan]
 
     if plan_info['prix'] == 0:
-        # Plan gratuit — activer directement
         connexion = get_connexion()
         curseur = connexion.cursor()
         date_debut = datetime.now()
@@ -2124,71 +2117,41 @@ def payer_abonnement(plan):
         connexion.close()
         return redirect('/dashboard')
 
-    if request.method == 'POST':
-        telephone = request.form['telephone']
-        operateur = request.form['operateur']
-
-        try:
-            # Créer la transaction FedaPay
-            transaction = Transaction.create({
-                'description': f'Abonnement GestPME — Plan {plan_info["nom"]}',
-                'amount': int(plan_info['prix']),
-                'currency': {'iso': 'XOF'},
-                'callback_url': f"{os.environ.get('APP_URL', 'http://127.0.0.1:5001')}/abonnement/confirmer",
-                'customer': {
-                    'email': session.get('email', 'client@gestpme.bj'),
-                },
-            })
-
-            # Sauvegarder en attente
-            connexion = get_connexion()
-            curseur = connexion.cursor()
-            curseur.execute("""
-                INSERT INTO abonnements (pme_id, plan, montant, statut, transaction_id)
-                VALUES (%s, %s, %s, 'en_attente', %s)
-            """, (session['pme_id'], plan, plan_info['prix'], str(transaction.id)))
-            connexion.commit()
-            connexion.close()
-
-            # Rediriger vers la page de paiement FedaPay
-            return redirect(transaction.links.payment_url)
-
-        except Exception as e:
-            return render_template('payer_abonnement.html',
-                                   plan=plan,
-                                   plan_info=plan_info,
-                                   erreur=f"Erreur : {str(e)}")
-
-    return render_template('payer_abonnement.html', plan=plan, plan_info=plan_info, erreur=None)
+    app_url = os.environ.get('APP_URL', 'http://127.0.0.1:5001')
+    return render_template('payer_abonnement.html',
+                           plan=plan,
+                           plan_info=plan_info,
+                           erreur=None,
+                           app_url=app_url,
+                           kkiapay_key=KKIAPAY_PUBLIC_KEY)
 
 
-@app.route('/abonnement/confirmer')
-def confirmer_abonnement():
-    transaction_id = request.args.get('id')
-    statut = request.args.get('status')
+@app.route('/abonnement/kkiapay/confirmer', methods=['POST'])
+@gerant_requis
+def kkiapay_confirmer():
+    from flask import jsonify
+    data = request.get_json()
+    transaction_id = data.get('transaction_id')
+    plan = data.get('plan')
 
-    if statut == 'approved' and transaction_id:
+    if not transaction_id or plan not in PLANS:
+        return jsonify({'success': False, 'message': 'Données invalides'}), 400
+
+    try:
         connexion = get_connexion()
         curseur = connexion.cursor()
+        date_debut = datetime.now()
+        date_fin = date_debut + timedelta(days=30)
+        curseur.execute("""
+            INSERT INTO abonnements (pme_id, plan, montant, statut, transaction_id, date_debut, date_fin)
+            VALUES (%s, %s, %s, 'actif', %s, %s, %s)
+        """, (session['pme_id'], plan, PLANS[plan]['prix'], transaction_id, date_debut, date_fin))
+        connexion.commit()
+        connexion.close()
+        return jsonify({'success': True})
 
-        curseur.execute("SELECT * FROM abonnements WHERE transaction_id = %s", (transaction_id,))
-        abonnement_row = curseur.fetchone()
-
-        if abonnement_row:
-            date_debut = datetime.now()
-            date_fin = date_debut + timedelta(days=30)
-
-            curseur.execute("""
-                UPDATE abonnements
-                SET statut = 'actif', date_debut = %s, date_fin = %s
-                WHERE transaction_id = %s
-            """, (date_debut, date_fin, transaction_id))
-            connexion.commit()
-            connexion.close()
-
-            return redirect('/dashboard')
-
-    return redirect('/abonnement')
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 if __name__ == '__main__':
