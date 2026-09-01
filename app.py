@@ -2092,7 +2092,7 @@ def abonnement():
         'abonnement.html',
         plans=PLANS,
         abonnement_actuel=abonnement_actuel,
-        fedapay_public_key=FEDAPAY_PUBLIC_KEY
+        kkiapay_key=KKIAPAY_PUBLIC_KEY
     )
 
 
