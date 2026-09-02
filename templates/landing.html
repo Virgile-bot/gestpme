@@ -6,321 +6,517 @@
     <title>GestPME — Plateforme de gestion commerciale pour PME béninoises</title>
     <meta name="description" content="GestPME est la première plateforme sécurisée de gestion commerciale connectée à la DGI pour les PME d'Afrique de l'Ouest.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <style>
         :root {
-            --bg:       #0A0F0D;
-            --bg-card:  #111816;
-            --bg-card2: #162019;
-            --bg-hover: #1C2B22;
-            --vert:     #00C97A;
-            --vert-dim: #00A362;
-            --vert-glow: rgba(0,201,122,0.15);
-            --or:       #F0A830;
-            --rouge:    #FF4D4D;
-            --text:     #E8F0EC;
-            --text2:    #7A9488;
-            --text3:    #4A6458;
-            --border:   rgba(0,201,122,0.12);
-            --border2:  rgba(255,255,255,0.06);
-            --radius:   10px;
-            --radius-lg:16px;
+            --bg:        #0B0E13;
+            --bg-card:   #161B27;
+            --bg-card2:  #1C2235;
+            --bg-hover:  #1E2438;
+            --green:     #00C97A;
+            --green-dim: #009E60;
+            --green-glow: rgba(0,201,122,0.12);
+            --green-line: rgba(0,201,122,0.18);
+            --blue:      #4F7FFF;
+            --blue-glow: rgba(79,127,255,0.1);
+            --gold:      #F0A830;
+            --gold-glow: rgba(240,168,48,0.1);
+            --red:       #F05252;
+            --t1: #EDF0F7;
+            --t2: #7B8DB0;
+            --t3: #3D4F72;
+            --b1: rgba(255,255,255,0.06);
+            --b2: rgba(255,255,255,0.04);
+            --r:  12px;
+            --r-sm: 8px;
+            --r-lg: 16px;
+            --r-pill: 100px;
+            --mono: 'JetBrains Mono', monospace;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: var(--bg);
-            color: var(--text);
+            color: var(--t1);
             font-size: 15px;
             line-height: 1.6;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3 { font-family: 'Fraunces', serif; }
+        h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; line-height: 1.1; }
+        a { text-decoration: none; color: inherit; }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: #0D3D28; border-radius: 3px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-card2); border-radius: 2px; }
 
-        /* NAV */
+        /* ── NAV ── */
         nav {
             position: fixed;
             top: 0; left: 0; right: 0;
-            z-index: 100;
+            z-index: 200;
+            height: 60px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 0 48px;
-            height: 64px;
-            background: rgba(10,15,13,0.85);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border2);
+            justify-content: space-between;
+            padding: 0 clamp(16px, 5vw, 64px);
+            background: rgba(11,14,19,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--b1);
             transition: box-shadow 0.3s;
         }
 
-        nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+        nav.scrolled { box-shadow: 0 4px 32px rgba(0,0,0,0.4); }
 
-        .nav-logo {
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-family: 'Fraunces', serif;
             font-size: 20px;
             font-weight: 700;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            text-decoration: none;
+            color: var(--t1);
+            letter-spacing: -0.02em;
         }
 
-        .nav-logo::before {
-            content: '';
-            width: 8px; height: 8px;
+        .nav-dot {
+            width: 7px; height: 7px;
             border-radius: 50%;
-            background: var(--vert);
-            box-shadow: 0 0 10px var(--vert);
+            background: var(--green);
+            box-shadow: 0 0 10px rgba(0,201,122,0.6);
+            animation: dot-p 3s ease-in-out infinite;
+        }
+
+        @keyframes dot-p {
+            0%,100% { box-shadow: 0 0 10px rgba(0,201,122,0.6); }
+            50% { box-shadow: 0 0 3px rgba(0,201,122,0.2); }
         }
 
         .nav-links {
             display: flex;
-            gap: 32px;
+            gap: 28px;
             list-style: none;
         }
 
         .nav-links a {
-            text-decoration: none;
-            color: var(--text2);
             font-size: 13px;
             font-weight: 500;
-            transition: color 0.2s;
+            color: var(--t2);
+            transition: color 0.18s;
         }
 
-        .nav-links a:hover { color: var(--vert); }
+        .nav-links a:hover { color: var(--t1); }
 
         .nav-cta { display: flex; gap: 10px; }
 
-        .btn-nav-outline {
+        .btn-ghost {
             padding: 8px 18px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--vert);
-            background: rgba(0,201,122,0.06);
-            text-decoration: none;
+            border: 1px solid var(--b1);
+            border-radius: var(--r-sm);
+            color: var(--t2);
             font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
+            font-weight: 500;
+            transition: all 0.18s;
         }
 
-        .btn-nav-outline:hover {
-            background: var(--vert-glow);
-            border-color: rgba(0,201,122,0.3);
+        .btn-ghost:hover {
+            border-color: var(--green-line);
+            color: var(--green);
+            background: var(--green-glow);
         }
 
-        .btn-nav-primary {
+        .btn-fill {
             padding: 8px 18px;
-            background: var(--vert);
-            border-radius: var(--radius);
-            color: #0A0F0D;
-            text-decoration: none;
+            background: var(--green);
+            border-radius: var(--r-sm);
+            color: #0B0E13;
             font-size: 13px;
             font-weight: 700;
-            transition: all 0.2s;
+            transition: all 0.18s;
         }
 
-        .btn-nav-primary:hover {
-            background: var(--vert-dim);
-            box-shadow: 0 0 16px rgba(0,201,122,0.3);
+        .btn-fill:hover {
+            background: var(--green-dim);
+            box-shadow: 0 0 20px rgba(0,201,122,0.3);
         }
 
-        /* HERO */
+        .nav-mobile-toggle {
+            display: none;
+            width: 36px; height: 36px;
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--b1);
+            color: var(--t1);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        /* ── HERO ── */
         .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            padding: 120px 20px 80px;
+            padding: 100px 20px 80px;
             position: relative;
             overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -200px; left: 50%;
-            transform: translateX(-50%);
-            width: 800px; height: 800px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,201,122,0.06) 0%, transparent 70%);
-            pointer-events: none;
+            text-align: center;
         }
 
         .hero-grid {
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(0,201,122,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,201,122,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+                linear-gradient(rgba(0,201,122,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,201,122,0.025) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: -200px; left: 50%;
+            transform: translateX(-50%);
+            width: 700px; height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,201,122,0.06) 0%, transparent 65%);
             pointer-events: none;
         }
+
+        .hero-glow-blue {
+            position: absolute;
+            bottom: -100px; right: -100px;
+            width: 400px; height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(79,127,255,0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-inner { position: relative; z-index: 1; max-width: 800px; }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            background: rgba(0,201,122,0.08);
-            border: 1px solid var(--border);
-            color: var(--vert);
+            gap: 8px;
+            background: var(--green-glow);
+            border: 1px solid var(--green-line);
+            color: var(--green);
             padding: 6px 16px;
-            border-radius: 20px;
+            border-radius: var(--r-pill);
             font-size: 12px;
             font-weight: 600;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             letter-spacing: 0.04em;
         }
 
-        .hero-badge::before {
-            content: '';
+        .hero-live {
             width: 6px; height: 6px;
             border-radius: 50%;
-            background: var(--vert);
-            box-shadow: 0 0 6px var(--vert);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: dot-p 2s infinite;
         }
 
         .hero h1 {
-            font-size: clamp(38px, 6vw, 72px);
+            font-size: clamp(36px, 6vw, 72px);
             font-weight: 900;
             line-height: 1.05;
+            letter-spacing: -0.03em;
             margin-bottom: 20px;
-            color: var(--text);
         }
 
-        .hero h1 span { color: var(--vert); text-shadow: 0 0 30px rgba(0,201,122,0.4); }
+        .hero h1 em {
+            font-style: normal;
+            color: var(--green);
+            text-shadow: 0 0 40px rgba(0,201,122,0.3);
+        }
 
-        .hero-sous {
+        .hero-sub {
             font-size: clamp(15px, 2vw, 18px);
-            color: var(--text2);
-            max-width: 580px;
+            color: var(--t2);
+            max-width: 560px;
             margin: 0 auto 40px;
+            line-height: 1.7;
         }
 
-        .hero-ctas {
+        .hero-actions {
             display: flex;
             gap: 14px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
-        .btn-hero-primary {
+        .btn-hero {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: var(--vert);
-            color: #0A0F0D;
-            padding: 15px 30px;
-            border-radius: var(--radius);
-            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: var(--r-sm);
             font-size: 15px;
             font-weight: 700;
             transition: all 0.2s;
-            box-shadow: 0 0 24px rgba(0,201,122,0.25);
+            cursor: pointer;
         }
 
-        .btn-hero-primary:hover {
-            background: var(--vert-dim);
+        .btn-hero.primary {
+            background: var(--green);
+            color: #0B0E13;
+            box-shadow: 0 0 28px rgba(0,201,122,0.25);
+        }
+
+        .btn-hero.primary:hover {
+            background: var(--green-dim);
             box-shadow: 0 0 40px rgba(0,201,122,0.4);
             transform: translateY(-2px);
         }
 
-        .btn-hero-secondary {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: transparent;
-            color: var(--text2);
-            padding: 15px 30px;
-            border-radius: var(--radius);
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 600;
-            border: 1px solid var(--border2);
-            transition: all 0.2s;
-        }
-
-        .btn-hero-secondary:hover {
-            border-color: var(--border);
-            color: var(--text);
+        .btn-hero.secondary {
             background: var(--bg-card);
+            color: var(--t2);
+            border: 1px solid var(--b1);
         }
 
+        .btn-hero.secondary:hover {
+            border-color: var(--green-line);
+            color: var(--t1);
+            transform: translateY(-2px);
+        }
+
+        /* STATS HÉRO */
         .hero-stats {
             display: flex;
-            gap: 48px;
             justify-content: center;
-            margin-top: 72px;
+            gap: 48px;
+            margin-top: 64px;
             padding-top: 40px;
-            border-top: 1px solid var(--border2);
+            border-top: 1px solid var(--b1);
             flex-wrap: wrap;
         }
 
         .hero-stat-val {
-            font-family: 'Fraunces', serif;
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--vert);
+            font-family: var(--mono);
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 600;
+            color: var(--green);
             line-height: 1;
-            text-shadow: 0 0 20px rgba(0,201,122,0.3);
         }
 
         .hero-stat-lbl {
             font-size: 12px;
-            color: var(--text3);
+            color: var(--t3);
             margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
         }
 
-        /* SECTIONS */
-        section { padding: 96px 20px; }
+        /* DASHBOARD PREVIEW */
+        .preview {
+            padding: 0 clamp(16px, 5vw, 64px) 80px;
+            position: relative;
+        }
+
+        .preview-inner {
+            background: var(--bg-card);
+            border: 1px solid var(--b1);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            max-width: 1000px;
+            margin: 0 auto;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+        }
+
+        .preview-bar {
+            background: var(--bg-card2);
+            border-bottom: 1px solid var(--b1);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .preview-dots { display: flex; gap: 6px; }
+        .preview-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        .preview-url {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--b1);
+            border-radius: var(--r-sm);
+            padding: 5px 12px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--t3);
+            max-width: 300px;
+        }
+
+        .preview-body {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            height: 340px;
+        }
+
+        .preview-sidebar {
+            background: #111520;
+            border-right: 1px solid var(--b1);
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .prev-brand {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 10px 16px;
+            border-bottom: 1px solid var(--b1);
+            margin-bottom: 12px;
+        }
+
+        .prev-brand-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(0,201,122,0.5);
+        }
+
+        .prev-brand-name {
+            font-family: 'Fraunces', serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--t1);
+        }
+
+        .prev-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--t3);
+        }
+
+        .prev-link.active {
+            background: var(--green-glow);
+            color: var(--green);
+        }
+
+        .prev-link .ti { font-size: 14px; }
+
+        .preview-main {
+            padding: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .prev-title {
+            font-family: 'Fraunces', serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--t1);
+        }
+
+        .prev-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .prev-card {
+            background: var(--bg-card2);
+            border: 1px solid var(--b1);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .prev-card-icon {
+            width: 28px; height: 28px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .prev-card-lbl { font-size: 9px; color: var(--t3); margin-bottom: 4px; }
+        .prev-card-val {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--t1);
+        }
+
+        .prev-chart {
+            background: var(--bg-card2);
+            border: 1px solid var(--b1);
+            border-radius: 8px;
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            overflow: hidden;
+        }
+
+        .prev-bar {
+            flex: 1;
+            border-radius: 3px 3px 0 0;
+            min-width: 0;
+        }
+
+        /* ── SECTIONS ── */
+        section { padding: 96px clamp(16px, 5vw, 64px); }
 
         .container { max-width: 1100px; margin: 0 auto; }
 
         .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--mono);
             font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--vert);
-            margin-bottom: 12px;
+            font-weight: 500;
+            color: var(--green);
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 20px; height: 1px;
+            background: var(--green);
         }
 
         .section-title {
-            font-size: clamp(26px, 4vw, 42px);
+            font-size: clamp(28px, 4vw, 48px);
             font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 14px;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+            margin-bottom: 16px;
         }
 
         .section-sub {
             font-size: 16px;
-            color: var(--text2);
-            max-width: 560px;
-            margin-bottom: 56px;
+            color: var(--t2);
+            max-width: 520px;
             line-height: 1.7;
+            margin-bottom: 56px;
         }
 
         /* PROBLÈME */
-        .probleme { background: var(--bg-card); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+        .pb-section { background: var(--bg-card); border-top: 1px solid var(--b1); border-bottom: 1px solid var(--b1); }
 
         .pb-grille {
             display: grid;
@@ -328,33 +524,44 @@
             gap: 16px;
         }
 
-        .pb-carte {
+        .pb-card {
             background: var(--bg);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-lg);
+            border: 1px solid var(--b1);
+            border-radius: var(--r);
             padding: 28px 24px;
             transition: all 0.2s;
         }
 
-        .pb-carte:hover {
-            border-color: var(--border);
+        .pb-card:hover {
+            border-color: var(--green-line);
             background: var(--bg-hover);
         }
 
-        .pb-icon { font-size: 30px; margin-bottom: 14px; }
+        .pb-icon {
+            width: 44px; height: 44px;
+            border-radius: var(--r-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .pb-icon.red   { background: rgba(240,82,82,0.1);   color: var(--red); }
+        .pb-icon.gold  { background: var(--gold-glow);       color: var(--gold); }
+        .pb-icon.blue  { background: var(--blue-glow);       color: var(--blue); }
+        .pb-icon.green { background: var(--green-glow);      color: var(--green); }
 
         .pb-titre {
             font-family: 'Fraunces', serif;
             font-size: 18px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--t1);
             margin-bottom: 8px;
         }
 
-        .pb-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+        .pb-desc { font-size: 13px; color: var(--t2); line-height: 1.6; }
 
         /* SOLUTION */
-        .solution { background: var(--bg); }
+        .sol-section { background: var(--bg); }
 
         .sol-grille {
             display: grid;
@@ -362,50 +569,60 @@
             gap: 14px;
         }
 
-        .sol-carte {
+        .sol-card {
             background: var(--bg-card);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-lg);
+            border: 1px solid var(--b1);
+            border-radius: var(--r);
             padding: 22px 18px;
-            text-align: center;
             transition: all 0.2s;
             position: relative;
             overflow: hidden;
         }
 
-        .sol-carte::before {
+        .sol-card::after {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
+            bottom: 0; left: 0; right: 0;
             height: 2px;
-            background: linear-gradient(90deg, var(--vert), transparent);
-            opacity: 0;
-            transition: opacity 0.2s;
+            background: var(--green);
+            transform: scaleX(0);
+            transition: transform 0.2s;
         }
 
-        .sol-carte:hover {
-            border-color: var(--border);
+        .sol-card:hover {
+            border-color: var(--green-line);
             background: var(--bg-hover);
             transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 16px rgba(0,201,122,0.08);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
 
-        .sol-carte:hover::before { opacity: 1; }
+        .sol-card:hover::after { transform: scaleX(1); }
 
-        .sol-icon { font-size: 28px; margin-bottom: 12px; }
+        .sol-icon {
+            width: 40px; height: 40px;
+            border-radius: var(--r-sm);
+            background: var(--green-glow);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--green);
+            font-size: 20px;
+            margin-bottom: 14px;
+            transition: transform 0.2s;
+        }
+
+        .sol-card:hover .sol-icon { transform: scale(1.1); }
 
         .sol-nom {
             font-family: 'Fraunces', serif;
             font-size: 15px;
             font-weight: 700;
-            color: var(--text);
-            margin-bottom: 8px;
+            color: var(--t1);
+            margin-bottom: 6px;
         }
 
-        .sol-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+        .sol-desc { font-size: 12px; color: var(--t2); line-height: 1.5; }
 
         /* SÉCURITÉ */
-        .securite { background: var(--bg-card); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+        .sec-section { background: var(--bg-card); border-top: 1px solid var(--b1); border-bottom: 1px solid var(--b1); }
 
         .sec-grille {
             display: grid;
@@ -413,102 +630,112 @@
             gap: 16px;
         }
 
-        .sec-carte {
+        .sec-card {
             background: var(--bg);
-            border: 1px solid var(--border2);
-            border-left: 2px solid var(--vert);
-            border-radius: var(--radius-lg);
+            border: 1px solid var(--b1);
+            border-radius: var(--r);
             padding: 24px;
             transition: all 0.2s;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
         }
 
-        .sec-carte:hover {
-            border-color: var(--border);
-            border-left-color: var(--vert);
-            box-shadow: 0 0 20px rgba(0,201,122,0.06);
+        .sec-card:hover {
+            border-color: var(--green-line);
+            background: var(--bg-hover);
         }
 
-        .sec-icon { font-size: 26px; margin-bottom: 12px; }
+        .sec-icon {
+            width: 40px; height: 40px;
+            border-radius: var(--r-sm);
+            background: var(--green-glow);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--green);
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .sec-content {}
 
         .sec-titre {
             font-family: 'Fraunces', serif;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
-            color: var(--vert);
-            margin-bottom: 8px;
+            color: var(--t1);
+            margin-bottom: 6px;
         }
 
-        .sec-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+        .sec-desc { font-size: 13px; color: var(--t2); line-height: 1.6; }
 
         /* PRIX */
-        .prix { background: var(--bg); }
+        .prix-section { background: var(--bg); }
 
         .prix-grille {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
+            gap: 16px;
             align-items: start;
         }
 
-        .prix-carte {
+        .prix-card {
             background: var(--bg-card);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-lg);
-            padding: 32px 26px;
+            border: 1px solid var(--b1);
+            border-radius: var(--r-lg);
+            padding: 32px 28px;
             text-align: center;
             position: relative;
             transition: all 0.2s;
         }
 
-        .prix-carte:hover {
-            border-color: var(--border);
+        .prix-card:hover {
+            border-color: var(--green-line);
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
-        .prix-carte.pop {
-            border-color: rgba(0,201,122,0.3);
+        .prix-card.pop {
+            border-color: var(--green-line);
             background: var(--bg-card2);
             transform: scale(1.03);
         }
 
-        .prix-carte.pop:hover {
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 24px rgba(0,201,122,0.12);
-        }
+        .prix-card.pop:hover { transform: scale(1.03) translateY(-4px); }
 
-        .badge-pop {
+        .prix-pop-badge {
             position: absolute;
             top: -13px; left: 50%;
             transform: translateX(-50%);
-            background: var(--vert);
-            color: #0A0F0D;
+            background: var(--green);
+            color: #0B0E13;
             padding: 4px 16px;
-            border-radius: 20px;
+            border-radius: var(--r-pill);
+            font-family: var(--mono);
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 600;
             white-space: nowrap;
         }
 
         .prix-plan {
+            font-family: var(--mono);
             font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-weight: 500;
+            color: var(--t3);
             letter-spacing: 0.1em;
-            color: var(--text3);
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .prix-montant {
-            font-family: 'Fraunces', serif;
-            font-size: 42px;
-            font-weight: 700;
-            color: var(--text);
+            font-family: var(--mono);
+            font-size: 44px;
+            font-weight: 600;
+            color: var(--t1);
             line-height: 1;
         }
 
         .prix-montant span {
             font-family: 'Inter', sans-serif;
             font-size: 14px;
-            color: var(--text2);
+            color: var(--t3);
             font-weight: 400;
         }
 
@@ -516,58 +743,58 @@
             list-style: none;
             margin: 24px 0 28px;
             text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .prix-features li {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-size: 13px;
-            color: var(--text2);
-            padding: 7px 0;
-            border-bottom: 1px solid var(--border2);
+            color: var(--t2);
         }
 
-        .prix-features li:last-child { border-bottom: none; }
-        .prix-features li::before { content: '✓'; color: var(--vert); font-weight: 700; flex-shrink: 0; }
+        .prix-features li .ti { color: var(--green); font-size: 16px; flex-shrink: 0; }
 
         .prix-btn {
             display: block;
             padding: 12px;
-            border-radius: var(--radius);
-            text-decoration: none;
+            border-radius: var(--r-sm);
             font-size: 14px;
             font-weight: 700;
+            font-family: var(--mono);
             text-align: center;
             transition: all 0.2s;
         }
 
-        .prix-btn-primary {
-            background: var(--vert);
-            color: #0A0F0D;
+        .prix-btn.primary {
+            background: var(--green);
+            color: #0B0E13;
         }
 
-        .prix-btn-primary:hover {
-            background: var(--vert-dim);
+        .prix-btn.primary:hover {
+            background: var(--green-dim);
             box-shadow: 0 0 20px rgba(0,201,122,0.3);
         }
 
-        .prix-btn-outline {
-            border: 1px solid var(--border2);
-            color: var(--text2);
+        .prix-btn.outline {
+            border: 1px solid var(--b1);
+            color: var(--t2);
         }
 
-        .prix-btn-outline:hover {
-            border-color: var(--border);
-            color: var(--text);
-            background: var(--bg-hover);
+        .prix-btn.outline:hover {
+            border-color: var(--green-line);
+            color: var(--green);
+            background: var(--green-glow);
         }
 
         /* VISION */
-        .vision {
+        .vision-section {
             background: var(--bg-card);
-            border-top: 1px solid var(--border2);
-            border-bottom: 1px solid var(--border2);
+            border-top: 1px solid var(--b1);
+            border-bottom: 1px solid var(--b1);
             text-align: center;
         }
 
@@ -580,59 +807,61 @@
         }
 
         .pays-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: var(--bg);
-            border: 1px solid var(--border2);
-            color: var(--text2);
+            border: 1px solid var(--b1);
+            color: var(--t2);
             padding: 8px 18px;
-            border-radius: 20px;
+            border-radius: var(--r-pill);
             font-size: 13px;
             transition: all 0.2s;
         }
 
         .pays-badge:hover {
-            border-color: var(--border);
-            color: var(--vert);
-            background: var(--bg-hover);
+            border-color: var(--green-line);
+            color: var(--green);
+            background: var(--green-glow);
         }
 
         .pays-badge.actif {
-            border-color: rgba(0,201,122,0.3);
-            color: var(--vert);
-            background: rgba(0,201,122,0.06);
+            border-color: var(--green-line);
+            color: var(--green);
+            background: var(--green-glow);
         }
 
         .vision-stats {
             display: flex;
-            gap: 64px;
             justify-content: center;
+            gap: 64px;
             flex-wrap: wrap;
         }
 
         .vision-stat-val {
-            font-family: 'Fraunces', serif;
-            font-size: 48px;
-            font-weight: 700;
-            color: var(--vert);
-            text-shadow: 0 0 24px rgba(0,201,122,0.3);
+            font-family: var(--mono);
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 600;
+            color: var(--green);
+            line-height: 1;
         }
 
         .vision-stat-lbl {
             font-size: 12px;
-            color: var(--text3);
-            margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+            color: var(--t3);
+            margin-top: 8px;
+            letter-spacing: 0.06em;
         }
 
         /* CTA FINAL */
-        .cta-final { background: var(--bg); text-align: center; }
+        .cta-section { background: var(--bg); text-align: center; }
 
         .cta-box {
             background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 72px 40px;
-            max-width: 680px;
+            border: 1px solid var(--green-line);
+            border-radius: var(--r-lg);
+            padding: clamp(48px, 8vw, 80px) clamp(24px, 6vw, 64px);
+            max-width: 700px;
             margin: 0 auto;
             position: relative;
             overflow: hidden;
@@ -641,22 +870,23 @@
         .cta-box::before {
             content: '';
             position: absolute;
-            top: -100px; left: 50%;
+            top: -120px; left: 50%;
             transform: translateX(-50%);
             width: 400px; height: 400px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,201,122,0.08) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(0,201,122,0.07) 0%, transparent 65%);
             pointer-events: none;
         }
 
         .cta-box h2 {
-            font-size: clamp(26px, 4vw, 42px);
+            font-size: clamp(26px, 4vw, 48px);
+            letter-spacing: -0.02em;
             margin-bottom: 14px;
             position: relative;
         }
 
         .cta-box p {
-            color: var(--text2);
+            color: var(--t2);
             font-size: 16px;
             margin-bottom: 36px;
             position: relative;
@@ -672,9 +902,9 @@
 
         /* FOOTER */
         footer {
-            background: var(--bg-card);
-            border-top: 1px solid var(--border2);
-            padding: 40px 48px;
+            background: #0B0E13;
+            border-top: 1px solid var(--b1);
+            padding: 40px clamp(16px, 5vw, 64px);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -682,100 +912,112 @@
             gap: 20px;
         }
 
-        .footer-logo {
-            font-family: 'Fraunces', serif;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--vert);
+        .footer-brand {
             display: flex;
             align-items: center;
             gap: 8px;
+            font-family: 'Fraunces', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--t1);
         }
 
-        .footer-logo::before {
-            content: '';
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--vert);
-            box-shadow: 0 0 6px var(--vert);
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 24px;
-        }
+        .footer-links { display: flex; gap: 24px; }
 
         .footer-links a {
-            color: var(--text3);
-            text-decoration: none;
+            color: var(--t3);
             font-size: 13px;
-            transition: color 0.2s;
+            transition: color 0.18s;
         }
 
-        .footer-links a:hover { color: var(--vert); }
+        .footer-links a:hover { color: var(--green); }
 
-        .footer-copy { font-size: 12px; color: var(--text3); }
+        .footer-copy {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--t3);
+        }
 
-        .sol-icon .ti, .sec-icon .ti, .pb-icon .ti {
-            font-size: 32px;
-            color: var(--vert);
-            display: block;
-            margin-bottom: 12px;
-        }
-        .sec-icon .ti { color: var(--vert); }
-        .sol-carte:hover .sol-icon .ti {
-            text-shadow: 0 0 16px rgba(0,201,122,0.5);
-        }
         /* RESPONSIVE */
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
+            .sol-grille { grid-template-columns: repeat(2, 1fr); }
+            .sec-grille { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
             nav { padding: 0 16px; }
             .nav-links { display: none; }
+            .nav-cta { display: none; }
+            .nav-mobile-toggle { display: flex; }
+
+            .preview-body { grid-template-columns: 1fr; }
+            .preview-sidebar { display: none; }
+            .preview-inner { max-width: 100%; }
+
             .pb-grille { grid-template-columns: 1fr; }
             .sol-grille { grid-template-columns: repeat(2, 1fr); }
             .sec-grille { grid-template-columns: 1fr; }
             .prix-grille { grid-template-columns: 1fr; }
-            .prix-carte.pop { transform: none; }
+            .prix-card.pop { transform: none; }
+
             .hero-stats { gap: 28px; }
-            footer { flex-direction: column; text-align: center; padding: 28px 20px; }
             .vision-stats { gap: 36px; }
+
+            section { padding: 64px 16px; }
+            footer { flex-direction: column; text-align: center; padding: 28px 16px; }
+
+            .prev-cards { grid-template-columns: repeat(2, 1fr); }
         }
 
-        @media (max-width: 600px) {
-            .sol-grille { grid-template-columns: repeat(2, 1fr); }
-            .hero h1 { font-size: 34px; }
-            .hero-stats { flex-direction: column; gap: 20px; align-items: center; }
-            .cta-box { padding: 40px 20px; }
-            section { padding: 64px 16px; }
+        @media (max-width: 480px) {
+            .sol-grille { grid-template-columns: 1fr 1fr; }
+            .hero h1 { font-size: 32px; }
+            .hero-stats { flex-direction: column; gap: 24px; align-items: center; }
         }
     </style>
 </head>
 <body>
 
     <!-- NAV -->
-    <nav id="navbar">
-        <a href="#" class="nav-logo">GestPME</a>
+    <nav id="nav">
+        <a href="#" class="nav-brand">
+            <div class="nav-dot"></div>
+            GestPME
+        </a>
         <ul class="nav-links">
-            <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="#solution">Fonctionnalités</a></li>
             <li><a href="#securite">Sécurité</a></li>
             <li><a href="#prix">Tarifs</a></li>
             <li><a href="#vision">Vision</a></li>
         </ul>
         <div class="nav-cta">
-            <a href="https://gestpme.onrender.com/login" class="btn-nav-outline">Se connecter</a>
-            <a href="https://gestpme.onrender.com/inscription" class="btn-nav-primary">Commencer gratuitement</a>
+            <a href="https://gestpme.onrender.com/login" class="btn-ghost">Se connecter</a>
+            <a href="https://gestpme.onrender.com/inscription" class="btn-fill">Commencer gratuitement</a>
         </div>
+        <button class="nav-mobile-toggle" id="menu-toggle">
+            <i class="ti ti-menu-2"></i>
+        </button>
     </nav>
 
     <!-- HERO -->
     <section class="hero">
         <div class="hero-grid"></div>
-        <div style="position:relative; z-index:1; width:100%;">
-            <div class="hero-badge">🌍 Conçu pour l'Afrique de l'Ouest</div>
-            <h1>Gérez votre PME.<br><span>Connectée à la DGI.</span></h1>
-            <p class="hero-sous">GestPME est la première plateforme sécurisée de gestion commerciale qui connecte les PME béninoises à la supervision fiscale en temps réel.</p>
-            <div class="hero-ctas">
-                <a href="https://gestpme.onrender.com/inscription" class="btn-hero-primary">🚀 Commencer gratuitement</a>
-                <a href="#fonctionnalites" class="btn-hero-secondary">Voir les fonctionnalités →</a>
+        <div class="hero-glow"></div>
+        <div class="hero-glow-blue"></div>
+        <div class="hero-inner">
+            <div class="hero-badge">
+                <div class="hero-live"></div>
+                Bénin · Afrique de l'Ouest · 2026
+            </div>
+            <h1>Gérez votre PME.<br><em>Connectée à la DGI.</em></h1>
+            <p class="hero-sub">La première plateforme sécurisée de gestion commerciale qui connecte les PME béninoises à la supervision fiscale en temps réel.</p>
+            <div class="hero-actions">
+                <a href="https://gestpme.onrender.com/inscription" class="btn-hero primary">
+                    <i class="ti ti-rocket"></i> Commencer gratuitement
+                </a>
+                <a href="#solution" class="btn-hero secondary">
+                    Voir les fonctionnalités <i class="ti ti-arrow-right"></i>
+                </a>
             </div>
             <div class="hero-stats">
                 <div>
@@ -783,207 +1025,290 @@
                     <div class="hero-stat-lbl">Modules métier</div>
                 </div>
                 <div>
-                    <div class="hero-stat-val">5</div>
-                    <div class="hero-stat-lbl">Niveaux de rôles</div>
-                </div>
-                <div>
                     <div class="hero-stat-val">100%</div>
                     <div class="hero-stat-lbl">Sécurisé OWASP</div>
                 </div>
                 <div>
-                    <div class="hero-stat-val">8</div>
-                    <div class="hero-stat-lbl">Pays CEDEAO visés</div>
+                    <div class="hero-stat-val">5</div>
+                    <div class="hero-stat-lbl">Niveaux de rôles</div>
+                </div>
+                <div>
+                    <div class="hero-stat-val">50M+</div>
+                    <div class="hero-stat-lbl">PME ciblées CEDEAO</div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- DASHBOARD PREVIEW -->
+    <div class="preview">
+        <div class="preview-inner">
+            <div class="preview-bar">
+                <div class="preview-dots">
+                    <div class="preview-dot" style="background:#F05252;"></div>
+                    <div class="preview-dot" style="background:#F0A830;"></div>
+                    <div class="preview-dot" style="background:#00C97A;"></div>
+                </div>
+                <div class="preview-url">gestpme.onrender.com/dashboard</div>
+            </div>
+            <div class="preview-body">
+                <div class="preview-sidebar">
+                    <div class="prev-brand">
+                        <div class="prev-brand-dot"></div>
+                        <span class="prev-brand-name">GestPME</span>
+                    </div>
+                    <div class="prev-link active"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+                    <div class="prev-link"><i class="ti ti-shopping-cart"></i> Ventes</div>
+                    <div class="prev-link"><i class="ti ti-box"></i> Stocks</div>
+                    <div class="prev-link"><i class="ti ti-receipt"></i> Factures</div>
+                    <div class="prev-link"><i class="ti ti-chart-line"></i> Recettes</div>
+                    <div class="prev-link"><i class="ti ti-credit-card"></i> Dépenses</div>
+                    <div class="prev-link"><i class="ti ti-shield-lock"></i> Sécurité</div>
+                </div>
+                <div class="preview-main">
+                    <div class="prev-title">Tableau de bord — Aujourd'hui</div>
+                    <div class="prev-cards">
+                        <div class="prev-card">
+                            <div class="prev-card-icon" style="background:rgba(0,201,122,0.1); color:#00C97A;">
+                                <i class="ti ti-trending-up" style="font-size:14px;"></i>
+                            </div>
+                            <div class="prev-card-lbl">Recette du jour</div>
+                            <div class="prev-card-val" style="color:#00C97A;">47 500 F</div>
+                        </div>
+                        <div class="prev-card">
+                            <div class="prev-card-icon" style="background:rgba(79,127,255,0.1); color:#4F7FFF;">
+                                <i class="ti ti-calendar-month" style="font-size:14px;"></i>
+                            </div>
+                            <div class="prev-card-lbl">Ce mois</div>
+                            <div class="prev-card-val" style="color:#4F7FFF;">1.2M F</div>
+                        </div>
+                        <div class="prev-card">
+                            <div class="prev-card-icon" style="background:rgba(240,168,48,0.1); color:#F0A830;">
+                                <i class="ti ti-box" style="font-size:14px;"></i>
+                            </div>
+                            <div class="prev-card-lbl">Produits</div>
+                            <div class="prev-card-val" style="color:#F0A830;">24</div>
+                        </div>
+                        <div class="prev-card">
+                            <div class="prev-card-icon" style="background:rgba(0,201,122,0.1); color:#00C97A;">
+                                <i class="ti ti-receipt" style="font-size:14px;"></i>
+                            </div>
+                            <div class="prev-card-lbl">Factures</div>
+                            <div class="prev-card-val">18</div>
+                        </div>
+                    </div>
+                    <div class="prev-chart">
+                        <div class="prev-bar" style="height:40%; background:rgba(0,201,122,0.2); border:1px solid rgba(0,201,122,0.3);"></div>
+                        <div class="prev-bar" style="height:65%; background:rgba(0,201,122,0.25); border:1px solid rgba(0,201,122,0.3);"></div>
+                        <div class="prev-bar" style="height:45%; background:rgba(0,201,122,0.2); border:1px solid rgba(0,201,122,0.3);"></div>
+                        <div class="prev-bar" style="height:80%; background:rgba(0,201,122,0.3); border:1px solid rgba(0,201,122,0.4);"></div>
+                        <div class="prev-bar" style="height:55%; background:rgba(0,201,122,0.2); border:1px solid rgba(0,201,122,0.3);"></div>
+                        <div class="prev-bar" style="height:90%; background:#00C97A; border:1px solid #00C97A;"></div>
+                        <div class="prev-bar" style="height:70%; background:rgba(0,201,122,0.25); border:1px solid rgba(0,201,122,0.3);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PROBLÈME -->
-    <section class="probleme">
+    <section class="pb-section">
         <div class="container">
             <div class="eyebrow">Le problème</div>
             <h2 class="section-title">Les PME africaines méritent mieux</h2>
-            <p class="section-sub">La majorité des petites entreprises d'Afrique de l'Ouest gèrent encore leurs activités sur papier, sans visibilité financière ni conformité fiscale.</p>
+            <p class="section-sub">La majorité des petites entreprises gèrent encore leur activité sur papier, sans traçabilité ni conformité fiscale.</p>
             <div class="pb-grille">
-                <div class="pb-carte">
-                    <div class="pb-icon">📋</div>
+                <div class="pb-card">
+                    <div class="pb-icon red"><i class="ti ti-clipboard-x"></i></div>
                     <div class="pb-titre">Gestion manuelle</div>
-                    <div class="pb-desc">Les ventes, stocks et factures sont gérés sur papier ou dans des fichiers Excel non sécurisés, sans traçabilité.</div>
+                    <div class="pb-desc">Ventes, stocks et factures gérés sur papier ou dans des fichiers Excel non sécurisés, sans traçabilité.</div>
                 </div>
-                <div class="pb-carte">
-                    <div class="pb-icon">🏛️</div>
+                <div class="pb-card">
+                    <div class="pb-icon gold"><i class="ti ti-landmark"></i></div>
                     <div class="pb-titre">Opacité fiscale</div>
-                    <div class="pb-desc">La DGI n'a aucun outil de supervision en temps réel — les déclarations fiscales sont approximatives et tardives.</div>
+                    <div class="pb-desc">La DGI n'a aucun outil de supervision en temps réel des activités commerciales des PME.</div>
                 </div>
-                <div class="pb-carte">
-                    <div class="pb-icon">📦</div>
+                <div class="pb-card">
+                    <div class="pb-icon blue"><i class="ti ti-box-off"></i></div>
                     <div class="pb-titre">Stocks incontrôlés</div>
-                    <div class="pb-desc">Les ruptures de stock et les pertes financières sont fréquentes faute d'un suivi précis de l'inventaire.</div>
+                    <div class="pb-desc">Ruptures fréquentes, pertes financières dues à un suivi approximatif de l'inventaire.</div>
                 </div>
-                <div class="pb-carte">
-                    <div class="pb-icon">💸</div>
+                <div class="pb-card">
+                    <div class="pb-icon green"><i class="ti ti-chart-off"></i></div>
                     <div class="pb-titre">Bénéfices invisibles</div>
-                    <div class="pb-desc">Les dirigeants ne savent pas si leur entreprise est rentable — sans séparation des biens, les décisions sont prises à l'aveugle.</div>
+                    <div class="pb-desc">Les dirigeants ne savent pas si leur entreprise est rentable — décisions prises à l'aveugle.</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- SOLUTION -->
-    <section class="solution" id="fonctionnalites">
+    <section class="sol-section" id="solution">
         <div class="container">
             <div class="eyebrow">La solution</div>
             <h2 class="section-title">Tout ce dont votre PME a besoin</h2>
-            <p class="section-sub">GestPME centralise toutes vos opérations commerciales dans une interface simple et sécurisée, accessible depuis n'importe quel appareil.</p>
+            <p class="section-sub">GestPME centralise toutes vos opérations dans une interface sécurisée, accessible depuis n'importe quel appareil.</p>
             <div class="sol-grille">
-                <div class="sol-carte">
+                <div class="sol-card">
                     <div class="sol-icon"><i class="ti ti-shopping-cart"></i></div>
                     <div class="sol-nom">Ventes</div>
                     <div class="sol-desc">Enregistrement, modification, annulation avec mise à jour automatique du stock</div>
                 </div>
-                <div class="sol-carte">
+                <div class="sol-card">
                     <div class="sol-icon"><i class="ti ti-box"></i></div>
                     <div class="sol-nom">Stocks</div>
                     <div class="sol-desc">Inventaire journalier, réapprovisionnement, alertes de rupture en temps réel</div>
                 </div>
-                <div class="sol-carte">
+                <div class="sol-card">
                     <div class="sol-icon"><i class="ti ti-receipt"></i></div>
                     <div class="sol-nom">Factures PDF</div>
-                    <div class="sol-desc">Génération automatique avec calcul TVA 18%, export PDF professionnel</div>
+                    <div class="sol-desc">Génération automatique avec TVA 18%, export PDF professionnel normalisé DGI</div>
                 </div>
-                <div class="sol-carte">
-                    <div class="sol-icon"><i class="ti ti-trending-up"></i></div>
+                <div class="sol-card">
+                    <div class="sol-icon"><i class="ti ti-coin"></i></div>
                     <div class="sol-nom">Bénéfices</div>
-                    <div class="sol-desc">Marge par produit, résultat net, principe de séparation des biens</div>
+                    <div class="sol-desc">Marge par produit, résultat net, séparation des biens — accès responsable</div>
                 </div>
-                <div class="sol-carte">
-                    <div class="sol-icon"><i class="ti ti-landmark"></i></div>
+                <div class="sol-card">
+                    <div class="sol-icon" style="background:var(--gold-glow); color:var(--gold);"><i class="ti ti-landmark"></i></div>
                     <div class="sol-nom">Espace DGI</div>
-                    <div class="sol-desc">Supervision fiscale nationale en temps réel, validation des factures</div>
+                    <div class="sol-desc">Supervision fiscale nationale en temps réel, validation multi-PME</div>
                 </div>
-                <div class="sol-carte">
+                <div class="sol-card">
                     <div class="sol-icon"><i class="ti ti-chart-line"></i></div>
                     <div class="sol-nom">Recettes</div>
-                    <div class="sol-desc">Graphiques d'évolution journalière, comparaison J/J-1</div>
+                    <div class="sol-desc">Graphiques d'évolution journalière avec double axe ventes / montants</div>
                 </div>
-                <div class="sol-carte">
+                <div class="sol-card">
                     <div class="sol-icon"><i class="ti ti-building-bank"></i></div>
                     <div class="sol-nom">Patrimoine</div>
                     <div class="sol-desc">Trésorerie + valeur du stock — ce que possède vraiment l'entreprise</div>
                 </div>
-                <div class="sol-carte">
-                    <div class="sol-icon"><i class="ti ti-users"></i></div>
+                <div class="sol-card">
+                    <div class="sol-icon" style="background:var(--blue-glow); color:var(--blue);"><i class="ti ti-users"></i></div>
                     <div class="sol-nom">Multi-rôles</div>
-                    <div class="sol-desc">Gérant, Admin PME, Superviseur DGI — chacun avec ses accès</div>
+                    <div class="sol-desc">Gérant, Responsable, Super-Admin, DGI — isolés et sécurisés</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- SÉCURITÉ -->
-    <section class="securite" id="securite">
+    <section class="sec-section" id="securite">
         <div class="container">
             <div class="eyebrow">Sécurité</div>
             <h2 class="section-title">Conçu pour la confiance</h2>
-            <p class="section-sub">GestPME a été soumis à des tests d'intrusion complets selon le référentiel OWASP Top 10 — aucun compromis sur la sécurité de vos données.</p>
+            <p class="section-sub">GestPME a été soumis à des tests d'intrusion complets selon OWASP Top 10 — aucun compromis sur la sécurité.</p>
             <div class="sec-grille">
-                <div class="sec-carte">
-                    <div class="sec-icon"><i class="ti ti-shield-lock"></i></div>
-                    <div class="sec-titre">MFA Google Authenticator</div>
-                    <div class="sec-desc">Authentification à deux facteurs — même si votre mot de passe est volé, votre compte reste protégé.</div>
+                <div class="sec-card">
+                    <div class="sec-icon"><i class="ti ti-device-mobile"></i></div>
+                    <div class="sec-content">
+                        <div class="sec-titre">MFA Google Authenticator</div>
+                        <div class="sec-desc">Double authentification — même si le mot de passe est volé, le compte reste protégé.</div>
+                    </div>
                 </div>
-                <div class="sec-carte">
+                <div class="sec-card">
                     <div class="sec-icon"><i class="ti ti-shield-check"></i></div>
-                    <div class="sec-titre">Pentest OWASP documenté</div>
-                    <div class="sec-desc">Tests d'injection SQL, IDOR, contrôle d'accès — toutes les vulnérabilités identifiées et corrigées.</div>
+                    <div class="sec-content">
+                        <div class="sec-titre">Pentest OWASP documenté</div>
+                        <div class="sec-desc">Tests d'injection SQL, IDOR, contrôle d'accès — failles détectées et corrigées.</div>
+                    </div>
                 </div>
-                <div class="sec-carte">
-                    <div class="sec-icon"><i class="ti ti-users"></i></div>
-                    <div class="sec-titre">RBAC à 5 niveaux</div>
-                    <div class="sec-desc">Gérant, Admin PME, Super-Admin, DGI — isolation complète entre les rôles et les entreprises.</div>
-                </div>
-                <div class="sec-carte">
-                    <div class="sec-icon"><i class="ti ti-lock"></i></div>
-                    <div class="sec-titre">Hash scrypt</div>
-                    <div class="sec-desc">Algorithme de hachage résistant aux attaques par force brute — bien supérieur à MD5 ou SHA256.</div>
-                </div>
-                <div class="sec-carte">
-                    <div class="sec-icon"><i class="ti ti-clipboard-list"></i></div>
-                    <div class="sec-titre">Journal d'audit</div>
-                    <div class="sec-desc">Chaque mouvement de stock, chaque vente est tracé avec horodatage et utilisateur responsable.</div>
-                </div>
-                <div class="sec-carte">
+                <div class="sec-card">
                     <div class="sec-icon"><i class="ti ti-lock-access"></i></div>
-                    <div class="sec-titre">HTTPS + Données chiffrées</div>
-                    <div class="sec-desc">Toutes les communications sont chiffrées — vos données financières ne transitent jamais en clair.</div>
+                    <div class="sec-content">
+                        <div class="sec-titre">RBAC à 5 niveaux</div>
+                        <div class="sec-desc">Isolation complète : chaque rôle accède uniquement à ce qui lui est dédié.</div>
+                    </div>
+                </div>
+                <div class="sec-card">
+                    <div class="sec-icon"><i class="ti ti-fingerprint"></i></div>
+                    <div class="sec-content">
+                        <div class="sec-titre">Hash scrypt</div>
+                        <div class="sec-desc">Algorithme résistant aux attaques — bien supérieur à MD5 ou SHA256.</div>
+                    </div>
+                </div>
+                <div class="sec-card">
+                    <div class="sec-icon"><i class="ti ti-clipboard-list"></i></div>
+                    <div class="sec-content">
+                        <div class="sec-titre">Journal d'audit</div>
+                        <div class="sec-desc">Chaque mouvement de stock est tracé avec horodatage et utilisateur.</div>
+                    </div>
+                </div>
+                <div class="sec-card">
+                    <div class="sec-icon"><i class="ti ti-lock"></i></div>
+                    <div class="sec-content">
+                        <div class="sec-titre">HTTPS + Données chiffrées</div>
+                        <div class="sec-desc">Toutes les communications sont chiffrées — vos données ne transitent jamais en clair.</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- PRIX -->
-    <section class="prix" id="prix">
+    <section class="prix-section" id="prix">
         <div class="container" style="text-align:center;">
             <div class="eyebrow">Tarifs</div>
             <h2 class="section-title">Simple et transparent</h2>
-            <p class="section-sub" style="margin:0 auto 56px;">Commencez gratuitement. Évoluez quand vous êtes prêt. Payez par Mobile Money.</p>
+            <p class="section-sub" style="margin: 0 auto 56px;">Commencez gratuitement. Payez par MTN MoMo ou Moov Money.</p>
             <div class="prix-grille">
-                <div class="prix-carte">
-                    <div class="prix-plan">Starter</div>
+                <div class="prix-card">
+                    <div class="prix-plan">STARTER</div>
                     <div class="prix-montant">0 <span>FCFA/mois</span></div>
                     <ul class="prix-features">
-                        <li>1 utilisateur</li>
-                        <li>50 produits</li>
-                        <li>100 ventes/mois</li>
-                        <li>Factures PDF</li>
-                        <li>Tableau de bord</li>
+                        <li><i class="ti ti-check"></i> 1 utilisateur</li>
+                        <li><i class="ti ti-check"></i> 50 produits</li>
+                        <li><i class="ti ti-check"></i> 100 ventes/mois</li>
+                        <li><i class="ti ti-check"></i> Factures PDF</li>
+                        <li><i class="ti ti-check"></i> Tableau de bord</li>
                     </ul>
-                    <a href="https://gestpme.onrender.com/inscription" class="prix-btn prix-btn-outline">Commencer gratuitement</a>
+                    <a href="https://gestpme.onrender.com/inscription" class="prix-btn outline">Commencer gratuitement</a>
                 </div>
-                <div class="prix-carte pop">
-                    <div class="badge-pop">⭐ Populaire</div>
+                <div class="prix-card pop">
+                    <div class="prix-pop-badge">⭐ POPULAIRE</div>
                     <div class="prix-plan">PME</div>
                     <div class="prix-montant">5 000 <span>FCFA/mois</span></div>
                     <ul class="prix-features">
-                        <li>5 utilisateurs</li>
-                        <li>Produits illimités</li>
-                        <li>Ventes illimitées</li>
-                        <li>Admin PME temps réel</li>
-                        <li>MFA inclus</li>
+                        <li><i class="ti ti-check"></i> 5 utilisateurs</li>
+                        <li><i class="ti ti-check"></i> Produits illimités</li>
+                        <li><i class="ti ti-check"></i> Ventes illimitées</li>
+                        <li><i class="ti ti-check"></i> Admin temps réel</li>
+                        <li><i class="ti ti-check"></i> MFA inclus</li>
                     </ul>
-                    <a href="https://gestpme.onrender.com/abonnement" class="prix-btn prix-btn-primary">S'abonner maintenant</a>
+                    <a href="https://gestpme.onrender.com/abonnement" class="prix-btn primary">S'abonner maintenant</a>
                 </div>
-                <div class="prix-carte">
-                    <div class="prix-plan">Business</div>
+                <div class="prix-card">
+                    <div class="prix-plan">BUSINESS</div>
                     <div class="prix-montant">15 000 <span>FCFA/mois</span></div>
                     <ul class="prix-features">
-                        <li>20 utilisateurs</li>
-                        <li>Multi-boutiques</li>
-                        <li>API publique</li>
-                        <li>Rapports avancés</li>
-                        <li>Support prioritaire</li>
+                        <li><i class="ti ti-check"></i> 20 utilisateurs</li>
+                        <li><i class="ti ti-check"></i> Multi-boutiques</li>
+                        <li><i class="ti ti-check"></i> API publique</li>
+                        <li><i class="ti ti-check"></i> Rapports avancés</li>
+                        <li><i class="ti ti-check"></i> Support prioritaire</li>
                     </ul>
-                    <a href="mailto:virgilezossou@gmail.com" class="prix-btn prix-btn-outline">Nous contacter</a>
+                    <a href="mailto:virgilezossou@gmail.com" class="prix-btn outline">Nous contacter</a>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- VISION -->
-    <section class="vision" id="vision">
+    <section class="vision-section" id="vision">
         <div class="container">
-            <div class="eyebrow">Notre vision</div>
-            <h2 class="section-title">L'Afrique de l'Ouest, un pays à la fois</h2>
-            <p class="section-sub" style="margin:0 auto 48px;">GestPME est né au Bénin, mais sa vision est régionale. Nous voulons connecter les PME de toute la CEDEAO à l'économie formelle.</p>
+            <div class="eyebrow" style="justify-content:center;">Vision</div>
+            <h2 class="section-title" style="text-align:center;">L'Afrique de l'Ouest, un pays à la fois</h2>
+            <p class="section-sub" style="margin: 0 auto 48px; text-align:center;">Né à Cotonou, GestPME a vocation à connecter les PME de toute la CEDEAO à l'économie formelle.</p>
             <div class="pays-grille">
-                <div class="pays-badge actif">🇧🇯 Bénin — En ligne</div>
-                <div class="pays-badge">🇹🇬 Togo — Bientôt</div>
-                <div class="pays-badge">🇧🇫 Burkina Faso — Bientôt</div>
-                <div class="pays-badge">🇨🇮 Côte d'Ivoire — Bientôt</div>
-                <div class="pays-badge">🇸🇳 Sénégal — Bientôt</div>
-                <div class="pays-badge">🇬🇭 Ghana — Bientôt</div>
-                <div class="pays-badge">🇲🇱 Mali — Bientôt</div>
-                <div class="pays-badge">🇳🇪 Niger — Bientôt</div>
+                <div class="pays-badge actif"><span>🇧🇯</span> Bénin — En ligne</div>
+                <div class="pays-badge"><span>🇹🇬</span> Togo</div>
+                <div class="pays-badge"><span>🇧🇫</span> Burkina Faso</div>
+                <div class="pays-badge"><span>🇨🇮</span> Côte d'Ivoire</div>
+                <div class="pays-badge"><span>🇸🇳</span> Sénégal</div>
+                <div class="pays-badge"><span>🇬🇭</span> Ghana</div>
+                <div class="pays-badge"><span>🇲🇱</span> Mali</div>
+                <div class="pays-badge"><span>🇳🇪</span> Niger</div>
             </div>
             <div class="vision-stats">
                 <div>
@@ -996,21 +1321,25 @@
                 </div>
                 <div>
                     <div class="vision-stat-val">FCFA</div>
-                    <div class="vision-stat-lbl">Monnaie commune</div>
+                    <div class="vision-stat-lbl">Monnaie commune partagée</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- CTA FINAL -->
-    <section class="cta-final">
+    <section class="cta-section">
         <div class="container">
             <div class="cta-box">
                 <h2>Prêt à moderniser votre PME ?</h2>
-                <p>Rejoignez les premières entreprises béninoises sur GestPME. C'est gratuit pour commencer.</p>
+                <p>Rejoignez les premières entreprises béninoises sur GestPME. Gratuit pour commencer.</p>
                 <div class="cta-btns">
-                    <a href="https://gestpme.onrender.com/inscription" class="btn-hero-primary">🚀 Créer mon compte gratuitement</a>
-                    <a href="mailto:virgilezossou@gmail.com" class="btn-hero-secondary">📩 Nous contacter</a>
+                    <a href="https://gestpme.onrender.com/inscription" class="btn-hero primary">
+                        <i class="ti ti-rocket"></i> Créer mon compte gratuitement
+                    </a>
+                    <a href="mailto:virgilezossou@gmail.com" class="btn-hero secondary">
+                        <i class="ti ti-mail"></i> Nous contacter
+                    </a>
                 </div>
             </div>
         </div>
@@ -1018,7 +1347,10 @@
 
     <!-- FOOTER -->
     <footer>
-        <div class="footer-logo">GestPME</div>
+        <div class="footer-brand">
+            <div class="nav-dot"></div>
+            GestPME
+        </div>
         <div class="footer-links">
             <a href="https://gestpme.onrender.com">Application</a>
             <a href="#prix">Tarifs</a>
@@ -1029,9 +1361,19 @@
     </footer>
 
     <script>
-        window.addEventListener('scroll', () => {
-            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
-        });
+    // Nav scroll
+    window.addEventListener('scroll', () => {
+        document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // Mobile menu (simple toggle des nav-links)
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+        const links = document.querySelector('.nav-links');
+        const cta = document.querySelector('.nav-cta');
+        const open = links.style.display === 'flex';
+        links.style.cssText = open ? '' : 'display:flex; flex-direction:column; position:fixed; top:60px; left:0; right:0; background:#111520; padding:16px; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06); z-index:199;';
+        cta.style.cssText = open ? '' : 'display:flex; position:fixed; bottom:0; left:0; right:0; padding:12px 16px; background:#111520; border-top:1px solid rgba(255,255,255,0.06); z-index:199;';
+    });
     </script>
 </body>
 </html>
