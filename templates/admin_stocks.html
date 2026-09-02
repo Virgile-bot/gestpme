@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Stocks (Admin)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body class="page-dashboard">
+    <header class="topbar">
+        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-user">
+            <a href="/admin" class="btn-logout"><i class="ti ti-arrow-left"></i> Retour</a>
+        </div>
+    </header>
+    <main class="contenu">
+        <h1>Gestion des stocks</h1>
+        <p>Réapprovisionnez les produits — la mise à jour est instantanée chez les gérants</p>
+
+        <div class="liste-cartes">
+            {% for p in produits %}
+            {% set classe = 'statut-alerte' if p.quantite_stock <= p.seuil_alerte else ('statut-attente' if p.quantite_stock <= p.seuil_alerte * 2 else 'statut-ok') %}
+            <div class="item-carte {{ classe }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ p.categorie }} · Prix vente : {{ p.prix_unitaire }} F · Prix achat : {{ p.prix_achat }} F
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        Seuil d'alerte : {{ p.seuil_alerte }} unités
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color:{{ 'var(--color-red-400)' if p.quantite_stock <= p.seuil_alerte else 'var(--accent)' }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                    {% if p.quantite_stock <= p.seuil_alerte %}
+                    <span class="badge badge-annulee">Stock critique</span>
+                    {% elif p.quantite_stock <= p.seuil_alerte * 2 %}
+                    <span class="badge badge-en_attente">Stock faible</span>
+                    {% endif %}
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

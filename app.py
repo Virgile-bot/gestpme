@@ -160,7 +160,7 @@ def super_admin_requis(fonction):
 
 @app.route('/')
 def accueil():
-  return render_template('landing.html')
+    return render_template('accueil.html')
 
 
 @app.route('/inscription', methods=['GET', 'POST'])
@@ -1322,7 +1322,7 @@ def ajouter_depense():
 
 
 @app.route('/benefices')
-@gerant_requis
+@admin_requis
 def benefices():
     connexion = get_connexion()
     curseur = connexion.cursor()
@@ -1366,7 +1366,7 @@ def benefices():
 
 
 @app.route('/patrimoine')
-@gerant_requis
+@admin_requis
 def patrimoine():
     connexion = get_connexion()
     curseur = connexion.cursor()
@@ -1733,68 +1733,128 @@ def admin_dashboard():
     connexion = get_connexion()
     curseur = connexion.cursor()
 
-    # Métriques globales de la PME
+    # Métriques globales
     curseur.execute("""
-        SELECT 
-            COALESCE(SUM(montant_total), 0) AS total_jour,
-            COUNT(*) AS nombre_ventes
+        SELECT COALESCE(SUM(montant_total), 0) AS total_jour, COUNT(*) AS nombre_ventes
         FROM ventes
         WHERE pme_id = %s AND DATE(date_vente) = CURDATE() AND statut != 'annulee'
     """, (session['pme_id'],))
     ventes_jour = curseur.fetchone()
 
     curseur.execute("""
-        SELECT 
-            COALESCE(SUM(montant_total), 0) AS total_mois,
-            COUNT(*) AS nombre_ventes_mois
+        SELECT COALESCE(SUM(montant_total), 0) AS total_mois, COUNT(*) AS nombre_ventes_mois
         FROM ventes
         WHERE pme_id = %s AND MONTH(date_vente) = MONTH(CURDATE())
         AND YEAR(date_vente) = YEAR(CURDATE()) AND statut != 'annulee'
     """, (session['pme_id'],))
     ventes_mois = curseur.fetchone()
 
-    # Dernières ventes (10 plus récentes)
+    # Graphique — évolution des ventes 7 derniers jours
     curseur.execute("""
-        SELECT 
-            v.id, v.client_nom, v.montant_total, v.mode_paiement,
-            v.statut, v.date_vente, p.nom AS nom_produit,
-            lv.quantite, u.nom_complet AS gerant_nom
+        SELECT DATE(date_vente) AS jour,
+               COUNT(*) AS nb_ventes,
+               COALESCE(SUM(montant_total), 0) AS total
+        FROM ventes
+        WHERE pme_id = %s AND statut != 'annulee'
+        AND date_vente >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(date_vente)
+        ORDER BY jour ASC
+    """, (session['pme_id'],))
+    graphique_data = curseur.fetchall()
+
+    labels_graphique = [str(r['jour']) for r in graphique_data]
+    valeurs_graphique = [float(r['total']) for r in graphique_data]
+    nb_ventes_graphique = [int(r['nb_ventes']) for r in graphique_data]
+
+    # Bénéfices
+    curseur.execute("""
+        SELECT
+            COALESCE(SUM((lv.prix_unitaire - p.prix_achat) * lv.quantite), 0) AS marge_brute
+        FROM lignes_vente lv
+        JOIN produits p ON p.id = lv.produit_id
+        JOIN ventes v ON v.id = lv.vente_id
+        WHERE v.pme_id = %s AND v.statut != 'annulee'
+    """, (session['pme_id'],))
+    marge = curseur.fetchone()
+
+    curseur.execute("""
+        SELECT COALESCE(SUM(montant), 0) AS total_depenses FROM depenses WHERE pme_id = %s
+    """, (session['pme_id'],))
+    depenses = curseur.fetchone()
+
+    benefice_net = float(marge['marge_brute']) - float(depenses['total_depenses'])
+
+    # Patrimoine
+    curseur.execute("""
+        SELECT COALESCE(SUM(montant_total), 0) AS total_ventes
+        FROM ventes WHERE pme_id = %s AND statut != 'annulee'
+    """, (session['pme_id'],))
+    total_ventes = float(curseur.fetchone()['total_ventes'])
+    tresorerie = total_ventes - float(depenses['total_depenses'])
+
+    curseur.execute("""
+        SELECT COALESCE(SUM(quantite_stock * prix_achat), 0) AS valeur_stock
+        FROM produits WHERE pme_id = %s AND actif = TRUE
+    """, (session['pme_id'],))
+    valeur_stock = float(curseur.fetchone()['valeur_stock'])
+    patrimoine_total = tresorerie + valeur_stock
+
+    # Stocks — alertes
+    curseur.execute("""
+        SELECT * FROM produits
+        WHERE pme_id = %s AND actif = TRUE
+        ORDER BY quantite_stock ASC
+        LIMIT 8
+    """, (session['pme_id'],))
+    produits_stock = curseur.fetchall()
+
+    # Dernières ventes
+    curseur.execute("""
+        SELECT v.id, v.client_nom, v.montant_total, v.mode_paiement,
+               v.statut, v.date_vente, p.nom AS nom_produit,
+               lv.quantite, u.nom_complet AS gerant_nom,
+               f.id AS facture_id
         FROM ventes v
         JOIN lignes_vente lv ON lv.vente_id = v.id
         JOIN produits p ON p.id = lv.produit_id
         JOIN utilisateurs u ON u.id = v.utilisateur_id
+        LEFT JOIN factures f ON f.vente_id = v.id
         WHERE v.pme_id = %s
-        ORDER BY v.date_vente DESC
-        LIMIT 10
+        ORDER BY v.date_vente DESC LIMIT 8
     """, (session['pme_id'],))
     dernieres_ventes = curseur.fetchall()
 
-    # Notifications non lues
+    # Notifications
     curseur.execute("""
-        SELECT * FROM notifications 
-        WHERE pme_id = %s AND lue = FALSE
+        SELECT * FROM notifications WHERE pme_id = %s AND lue = FALSE
         ORDER BY date_creation DESC
     """, (session['pme_id'],))
     notifications = curseur.fetchall()
 
-    # Liste des gérants de cette PME
+    # Gérants
     curseur.execute("""
         SELECT id, nom_complet, email, mfa_active
-        FROM utilisateurs 
-        WHERE pme_id = %s AND role = 'gerant'
+        FROM utilisateurs WHERE pme_id = %s AND role = 'gerant'
     """, (session['pme_id'],))
     gerants = curseur.fetchall()
 
     connexion.close()
 
-    return render_template(
-        'admin_dashboard.html',
+    return render_template('admin_dashboard.html',
         nom=session['nom'],
         ventes_jour=ventes_jour,
         ventes_mois=ventes_mois,
+        benefice_net=benefice_net,
+        tresorerie=tresorerie,
+        patrimoine_total=patrimoine_total,
+        valeur_stock=valeur_stock,
+        produits_stock=produits_stock,
         dernieres_ventes=dernieres_ventes,
         notifications=notifications,
-        gerants=gerants
+        gerants=gerants,
+        labels_graphique=labels_graphique,
+        valeurs_graphique=valeurs_graphique,
+        nb_ventes_graphique=nb_ventes_graphique
     )
 
 
@@ -1916,8 +1976,93 @@ def admin_rapport():
     )
 
 
-# ── Événements WebSocket ──
-@socketio.on('rejoindre_salle_admin')
+@app.route('/admin/stock/reapprovisionner/<int:produit_id>', methods=['GET', 'POST'])
+@admin_requis
+def admin_reapprovisionner(produit_id):
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    curseur.execute("""
+        SELECT * FROM produits WHERE id = %s AND pme_id = %s
+    """, (produit_id, session['pme_id']))
+    produit = curseur.fetchone()
+
+    if not produit:
+        connexion.close()
+        return "Produit introuvable", 404
+
+    if request.method == 'POST':
+        quantite = int(request.form['quantite'])
+        motif = request.form.get('motif', 'Réapprovisionnement par le responsable')
+
+        if quantite <= 0:
+            connexion.close()
+            return render_template('admin_reapprovisionner.html',
+                                   produit=produit,
+                                   erreur="La quantité doit être supérieure à 0.")
+
+        stock_avant = produit['quantite_stock']
+        stock_apres = stock_avant + quantite
+
+        # Mettre à jour le stock
+        curseur.execute("""
+            UPDATE produits SET quantite_stock = %s WHERE id = %s AND pme_id = %s
+        """, (stock_apres, produit_id, session['pme_id']))
+
+        # Enregistrer le mouvement
+        curseur.execute("""
+            INSERT INTO mouvements_stock
+            (produit_id, pme_id, type_mouvement, quantite, stock_avant, stock_apres, motif, utilisateur_id)
+            VALUES (%s, %s, 'entree_reappro', %s, %s, %s, %s, %s)
+        """, (produit_id, session['pme_id'], quantite, stock_avant, stock_apres, motif, session['utilisateur_id']))
+
+        # Notification dans la table
+        curseur.execute("""
+            INSERT INTO notifications (pme_id, type_notification, message)
+            VALUES (%s, 'reappro_stock', %s)
+        """, (session['pme_id'], f"Stock réapprovisionné — {produit['nom']} : +{quantite} unités (total : {stock_apres})"))
+
+        connexion.commit()
+        connexion.close()
+
+        # Émettre WebSocket vers tous les gérants de cette PME
+        socketio.emit('stock_reapprovisionne', {
+            'produit': produit['nom'],
+            'produit_id': produit_id,
+            'quantite_ajoutee': quantite,
+            'nouveau_stock': stock_apres,
+            'motif': motif,
+            'heure': datetime.now().strftime('%H:%M:%S')
+        }, room=f"gerants_pme_{session['pme_id']}")
+
+        return redirect('/admin')
+
+    connexion.close()
+    return render_template('admin_reapprovisionner.html', produit=produit, erreur=None)
+
+
+@app.route('/admin/stocks')
+@admin_requis
+def admin_stocks():
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+    curseur.execute("""
+        SELECT * FROM produits
+        WHERE pme_id = %s AND actif = TRUE
+        ORDER BY quantite_stock ASC
+    """, (session['pme_id'],))
+    produits = curseur.fetchall()
+    connexion.close()
+    return render_template('admin_stocks.html', produits=produits)
+
+
+# ── Événement WebSocket gérant — rejoint sa salle pour recevoir les notifs stock
+@socketio.on('rejoindre_salle_gerant')
+def rejoindre_salle_gerant(data):
+    if 'pme_id' in session and session.get('role') == 'gerant':
+        salle = f"gerants_pme_{session['pme_id']}"
+        join_room(salle)
+        emit('connecte', {'message': f'Connecté à la salle {salle}'})
 def rejoindre_salle_admin(data):
     """L'admin rejoint sa salle privée pour recevoir les notifications de sa PME"""
     if 'pme_id' in session and session.get('role') == 'admin_pme':
@@ -2092,7 +2237,7 @@ def abonnement():
         'abonnement.html',
         plans=PLANS,
         abonnement_actuel=abonnement_actuel,
-        kkiapay_key=KKIAPAY_PUBLIC_KEY
+        fedapay_public_key=FEDAPAY_PUBLIC_KEY
     )
 
 

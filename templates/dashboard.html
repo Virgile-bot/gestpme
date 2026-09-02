@@ -85,16 +85,6 @@
                 <div class="module-nom">Dépenses</div>
                 <div class="module-desc">Suivre les charges générales de l'entreprise</div>
             </a>
-            <a href="/benefices" class="module-carte">
-                <div class="module-icone"><i class="ti ti-trending-up"></i></div>
-                <div class="module-nom">Bénéfices</div>
-                <div class="module-desc">Marge par produit et résultat net pour le dirigeant</div>
-            </a>
-            <a href="/patrimoine" class="module-carte">
-                <div class="module-icone"><i class="ti ti-building-bank"></i></div>
-                <div class="module-nom">Patrimoine</div>
-                <div class="module-desc">Trésorerie et valeur du stock de l'entreprise</div>
-            </a>
 
             <a href="/abonnement" class="module-carte module-dgi">
                 <div class="module-icone"><i class="ti ti-star"></i></div>
@@ -109,5 +99,32 @@
             </a>
         </div>
     </main>
+
+    <!-- WebSocket gérant — notifications de réapprovisionnement -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <div id="toast-gerant" style="position:fixed; top:70px; right:16px; z-index:9999;
+         display:flex; flex-direction:column; gap:10px; width:min(300px, calc(100vw - 32px));"></div>
+    <script>
+        const socket = io();
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_gerant', {});
+        });
+
+        socket.on('stock_reapprovisionne', function(data) {
+            // Toast de notification
+            const container = document.getElementById('toast-gerant');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = 'var(--color-orange-400)';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">📦 Stock réapprovisionné</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${data.produit}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--color-orange-400); margin-top:4px;">+${data.quantite_ajoutee} unités</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Nouveau stock : ${data.nouveau_stock} · ${data.heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 6000);
+        });
+    </script>
 </body>
 </html>
