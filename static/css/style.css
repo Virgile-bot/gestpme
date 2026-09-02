@@ -857,8 +857,33 @@ tr:hover td {
 }
 
 /* ===========================================================
-   RESPONSIVE MOBILE
+   ICÔNES TABLER
    =========================================================== */
+.module-icone {
+    font-size: 28px;
+    line-height: 1;
+    color: var(--vert);
+    display: flex;
+    align-items: center;
+}
+
+.module-icone .ti {
+    font-size: 28px;
+    color: var(--vert);
+    transition: var(--transition);
+}
+
+.module-carte:hover .module-icone .ti {
+    text-shadow: 0 0 12px rgba(0,201,122,0.5);
+    transform: scale(1.1);
+}
+
+.module-carte.module-dgi .module-icone .ti { color: var(--or); }
+.module-carte.module-dgi:hover .module-icone .ti {
+    text-shadow: 0 0 12px rgba(240,168,48,0.5);
+}
+
+.ti { transition: var(--transition); }
 @media (max-width: 768px) {
     .topbar { padding: 0 16px; height: 56px; }
     .topbar-logo { font-size: 17px; }

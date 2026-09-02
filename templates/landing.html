@@ -6,35 +6,47 @@
     <title>GestPME — Plateforme de gestion commerciale pour PME béninoises</title>
     <meta name="description" content="GestPME est la première plateforme sécurisée de gestion commerciale connectée à la DGI pour les PME d'Afrique de l'Ouest.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <style>
         :root {
-            --vert: #1B4332;
-            --vert-clair: #2D6A4F;
-            --or: #C58F3C;
-            --or-clair: #D4A24C;
-            --papier: #FAF6ED;
-            --encre: #2D2A26;
-            --encre-douce: #5C5650;
-            --rouge: #A23B2E;
-            --blanc: #FFFFFF;
-            --ligne: #DDD3BC;
+            --bg:       #0A0F0D;
+            --bg-card:  #111816;
+            --bg-card2: #162019;
+            --bg-hover: #1C2B22;
+            --vert:     #00C97A;
+            --vert-dim: #00A362;
+            --vert-glow: rgba(0,201,122,0.15);
+            --or:       #F0A830;
+            --rouge:    #FF4D4D;
+            --text:     #E8F0EC;
+            --text2:    #7A9488;
+            --text3:    #4A6458;
+            --border:   rgba(0,201,122,0.12);
+            --border2:  rgba(255,255,255,0.06);
+            --radius:   10px;
+            --radius-lg:16px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Inter', sans-serif;
-            color: var(--encre);
-            background: var(--blanc);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
             overflow-x: hidden;
         }
 
         h1, h2, h3 { font-family: 'Fraunces', serif; }
 
-        /* ── NAV ── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #0D3D28; border-radius: 3px; }
+
+        /* NAV */
         nav {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -42,23 +54,24 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 60px;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(221,211,188,0.4);
+            padding: 0 48px;
+            height: 64px;
+            background: rgba(10,15,13,0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border2);
             transition: box-shadow 0.3s;
         }
 
-        nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+        nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
 
         .nav-logo {
             font-family: 'Fraunces', serif;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: var(--vert);
+            color: var(--text);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
             text-decoration: none;
         }
 
@@ -66,7 +79,8 @@
             content: '';
             width: 8px; height: 8px;
             border-radius: 50%;
-            background: var(--or);
+            background: var(--vert);
+            box-shadow: 0 0 10px var(--vert);
         }
 
         .nav-links {
@@ -77,49 +91,50 @@
 
         .nav-links a {
             text-decoration: none;
-            color: var(--encre-douce);
-            font-size: 14px;
+            color: var(--text2);
+            font-size: 13px;
             font-weight: 500;
             transition: color 0.2s;
         }
 
         .nav-links a:hover { color: var(--vert); }
 
-        .nav-cta {
-            display: flex;
-            gap: 12px;
-        }
+        .nav-cta { display: flex; gap: 10px; }
 
-        .btn-outline {
-            padding: 9px 20px;
-            border: 1.5px solid var(--vert);
-            border-radius: 6px;
+        .btn-nav-outline {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             color: var(--vert);
+            background: rgba(0,201,122,0.06);
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
-        .btn-outline:hover { background: var(--papier); }
+        .btn-nav-outline:hover {
+            background: var(--vert-glow);
+            border-color: rgba(0,201,122,0.3);
+        }
 
-        .btn-primary {
-            padding: 9px 20px;
+        .btn-nav-primary {
+            padding: 8px 18px;
             background: var(--vert);
-            border-radius: 6px;
-            color: white;
+            border-radius: var(--radius);
+            color: #0A0F0D;
             text-decoration: none;
             font-size: 13px;
-            font-weight: 600;
-            transition: background 0.2s, transform 0.15s;
+            font-weight: 700;
+            transition: all 0.2s;
         }
 
-        .btn-primary:hover {
-            background: var(--vert-clair);
-            transform: translateY(-1px);
+        .btn-nav-primary:hover {
+            background: var(--vert-dim);
+            box-shadow: 0 0 16px rgba(0,201,122,0.3);
         }
 
-        /* ── HERO ── */
+        /* HERO */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -127,7 +142,6 @@
             justify-content: center;
             text-align: center;
             padding: 120px 20px 80px;
-            background: linear-gradient(160deg, #F8F4EC 0%, #EDF4F0 50%, #F0E9D8 100%);
             position: relative;
             overflow: hidden;
         }
@@ -135,54 +149,69 @@
         .hero::before {
             content: '';
             position: absolute;
-            top: -200px; right: -200px;
-            width: 600px; height: 600px;
+            top: -200px; left: 50%;
+            transform: translateX(-50%);
+            width: 800px; height: 800px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(197,143,60,0.12), transparent 70%);
+            background: radial-gradient(circle, rgba(0,201,122,0.06) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .hero::after {
-            content: '';
+        .hero-grid {
             position: absolute;
-            bottom: -150px; left: -150px;
-            width: 500px; height: 500px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(27,67,50,0.08), transparent 70%);
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,201,122,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,201,122,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            pointer-events: none;
         }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(27,67,50,0.08);
-            border: 1px solid rgba(27,67,50,0.15);
+            gap: 7px;
+            background: rgba(0,201,122,0.08);
+            border: 1px solid var(--border);
             color: var(--vert);
             padding: 6px 16px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             margin-bottom: 24px;
-            animation: fadeUp 0.6s ease;
+            letter-spacing: 0.04em;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--vert);
+            box-shadow: 0 0 6px var(--vert);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .hero h1 {
-            font-size: clamp(40px, 6vw, 72px);
+            font-size: clamp(38px, 6vw, 72px);
             font-weight: 900;
             line-height: 1.05;
-            color: var(--encre);
-            margin-bottom: 24px;
-            animation: fadeUp 0.7s ease 0.1s backwards;
+            margin-bottom: 20px;
+            color: var(--text);
         }
 
-        .hero h1 span { color: var(--vert); }
+        .hero h1 span { color: var(--vert); text-shadow: 0 0 30px rgba(0,201,122,0.4); }
 
         .hero-sous {
-            font-size: clamp(16px, 2vw, 20px);
-            color: var(--encre-douce);
-            max-width: 600px;
+            font-size: clamp(15px, 2vw, 18px);
+            color: var(--text2);
+            max-width: 580px;
             margin: 0 auto 40px;
-            line-height: 1.6;
-            animation: fadeUp 0.7s ease 0.2s backwards;
         }
 
         .hero-ctas {
@@ -190,301 +219,296 @@
             gap: 14px;
             justify-content: center;
             flex-wrap: wrap;
-            animation: fadeUp 0.7s ease 0.3s backwards;
         }
 
-        .hero-cta-primary {
+        .btn-hero-primary {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             background: var(--vert);
-            color: white;
-            padding: 16px 32px;
-            border-radius: 8px;
+            color: #0A0F0D;
+            padding: 15px 30px;
+            border-radius: var(--radius);
             text-decoration: none;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(27,67,50,0.25);
+            transition: all 0.2s;
+            box-shadow: 0 0 24px rgba(0,201,122,0.25);
         }
 
-        .hero-cta-primary:hover {
+        .btn-hero-primary:hover {
+            background: var(--vert-dim);
+            box-shadow: 0 0 40px rgba(0,201,122,0.4);
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(27,67,50,0.35);
         }
 
-        .hero-cta-secondary {
+        .btn-hero-secondary {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: white;
-            color: var(--vert);
-            padding: 16px 32px;
-            border-radius: 8px;
+            background: transparent;
+            color: var(--text2);
+            padding: 15px 30px;
+            border-radius: var(--radius);
             text-decoration: none;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            border: 2px solid var(--ligne);
-            transition: border-color 0.2s, transform 0.2s;
+            border: 1px solid var(--border2);
+            transition: all 0.2s;
         }
 
-        .hero-cta-secondary:hover {
-            border-color: var(--vert);
-            transform: translateY(-2px);
+        .btn-hero-secondary:hover {
+            border-color: var(--border);
+            color: var(--text);
+            background: var(--bg-card);
         }
 
         .hero-stats {
             display: flex;
             gap: 48px;
             justify-content: center;
-            margin-top: 64px;
-            animation: fadeUp 0.7s ease 0.4s backwards;
+            margin-top: 72px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border2);
+            flex-wrap: wrap;
         }
 
-        .hero-stat-valeur {
+        .hero-stat-val {
             font-family: 'Fraunces', serif;
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
             color: var(--vert);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(0,201,122,0.3);
         }
 
-        .hero-stat-label {
-            font-size: 13px;
-            color: var(--encre-douce);
-            margin-top: 4px;
-        }
-
-        /* ── SECTIONS COMMUNES ── */
-        section {
-            padding: 96px 20px;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .section-eyebrow {
+        .hero-stat-lbl {
             font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
+            color: var(--text3);
+            margin-top: 6px;
             text-transform: uppercase;
-            color: var(--or);
+            letter-spacing: 0.08em;
+        }
+
+        /* SECTIONS */
+        section { padding: 96px 20px; }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--vert);
             margin-bottom: 12px;
         }
 
-        .section-titre {
-            font-size: clamp(28px, 4vw, 44px);
-            font-weight: 700;
-            color: var(--encre);
-            margin-bottom: 16px;
-            line-height: 1.15;
-        }
-
-        .section-sous {
-            font-size: 17px;
-            color: var(--encre-douce);
-            max-width: 580px;
-            line-height: 1.6;
-            margin-bottom: 56px;
-        }
-
-        /* ── PROBLÈME ── */
-        .probleme { background: var(--encre); }
-
-        .probleme .section-titre { color: white; }
-        .probleme .section-sous { color: #AAA; }
-        .probleme .section-eyebrow { color: var(--or); }
-
-        .probleme-grille {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-        }
-
-        .probleme-carte {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 28px;
-            transition: background 0.2s;
-        }
-
-        .probleme-carte:hover { background: rgba(255,255,255,0.07); }
-
-        .probleme-icon {
-            font-size: 32px;
+        .section-title {
+            font-size: clamp(26px, 4vw, 42px);
+            font-weight: 900;
+            line-height: 1.1;
             margin-bottom: 14px;
         }
 
-        .probleme-titre {
-            font-family: 'Fraunces', serif;
-            font-size: 20px;
-            color: white;
-            margin-bottom: 8px;
+        .section-sub {
+            font-size: 16px;
+            color: var(--text2);
+            max-width: 560px;
+            margin-bottom: 56px;
+            line-height: 1.7;
         }
 
-        .probleme-desc {
-            font-size: 14px;
-            color: #888;
-            line-height: 1.6;
-        }
+        /* PROBLÈME */
+        .probleme { background: var(--bg-card); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
 
-        /* ── SOLUTION ── */
-        .solution { background: var(--papier); }
-
-        .solution-grille {
+        .pb-grille {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 16px;
         }
 
-        .solution-carte {
-            background: white;
-            border: 1px solid var(--ligne);
-            border-radius: 12px;
-            padding: 24px 20px;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.2s, border-color 0.2s;
+        .pb-carte {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
+            transition: all 0.2s;
         }
 
-        .solution-carte.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .pb-carte:hover {
+            border-color: var(--border);
+            background: var(--bg-hover);
         }
 
-        .solution-carte:hover {
-            box-shadow: 0 12px 32px rgba(27,67,50,0.12);
-            border-color: var(--or);
-        }
+        .pb-icon { font-size: 30px; margin-bottom: 14px; }
 
-        .solution-icone {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .solution-nom {
+        .pb-titre {
             font-family: 'Fraunces', serif;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--encre);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
             margin-bottom: 8px;
         }
 
-        .solution-desc {
-            font-size: 12px;
-            color: var(--encre-douce);
-            line-height: 1.5;
-        }
+        .pb-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
 
-        /* ── SECURITE ── */
-        .securite { background: white; }
+        /* SOLUTION */
+        .solution { background: var(--bg); }
 
-        .securite-grille {
+        .sol-grille {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
         }
 
-        .securite-carte {
-            border: 1px solid var(--ligne);
-            border-radius: 12px;
-            padding: 28px;
+        .sol-carte {
+            background: var(--bg-card);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-lg);
+            padding: 22px 18px;
+            text-align: center;
+            transition: all 0.2s;
             position: relative;
             overflow: hidden;
         }
 
-        .securite-carte::before {
+        .sol-carte::before {
             content: '';
             position: absolute;
-            top: 0; left: 0;
-            width: 3px; height: 100%;
-            background: var(--vert);
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--vert), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
-        .securite-titre {
+        .sol-carte:hover {
+            border-color: var(--border);
+            background: var(--bg-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 16px rgba(0,201,122,0.08);
+        }
+
+        .sol-carte:hover::before { opacity: 1; }
+
+        .sol-icon { font-size: 28px; margin-bottom: 12px; }
+
+        .sol-nom {
             font-family: 'Fraunces', serif;
-            font-size: 18px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .sol-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+        /* SÉCURITÉ */
+        .securite { background: var(--bg-card); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+
+        .sec-grille {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .sec-carte {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            border-left: 2px solid var(--vert);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all 0.2s;
+        }
+
+        .sec-carte:hover {
+            border-color: var(--border);
+            border-left-color: var(--vert);
+            box-shadow: 0 0 20px rgba(0,201,122,0.06);
+        }
+
+        .sec-icon { font-size: 26px; margin-bottom: 12px; }
+
+        .sec-titre {
+            font-family: 'Fraunces', serif;
+            font-size: 16px;
+            font-weight: 700;
             color: var(--vert);
             margin-bottom: 8px;
         }
 
-        .securite-desc {
-            font-size: 14px;
-            color: var(--encre-douce);
-            line-height: 1.6;
-        }
+        .sec-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
 
-        /* ── PRIX ── */
-        .prix { background: var(--papier); }
+        /* PRIX */
+        .prix { background: var(--bg); }
 
         .prix-grille {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 18px;
             align-items: start;
         }
 
         .prix-carte {
-            background: white;
-            border: 2px solid var(--ligne);
-            border-radius: 16px;
-            padding: 32px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-lg);
+            padding: 32px 26px;
             text-align: center;
             position: relative;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
         }
 
         .prix-carte:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 40px rgba(27,67,50,0.12);
+            border-color: var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
-        .prix-carte.populaire {
-            border-color: var(--vert);
-            transform: scale(1.04);
+        .prix-carte.pop {
+            border-color: rgba(0,201,122,0.3);
+            background: var(--bg-card2);
+            transform: scale(1.03);
         }
 
-        .prix-carte.populaire:hover { transform: scale(1.04) translateY(-4px); }
+        .prix-carte.pop:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 24px rgba(0,201,122,0.12);
+        }
 
         .badge-pop {
             position: absolute;
-            top: -14px;
-            left: 50%;
+            top: -13px; left: 50%;
             transform: translateX(-50%);
             background: var(--vert);
-            color: white;
-            padding: 4px 18px;
+            color: #0A0F0D;
+            padding: 4px 16px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
         }
 
         .prix-plan {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--encre-douce);
-            margin-bottom: 12px;
+            letter-spacing: 0.1em;
+            color: var(--text3);
+            margin-bottom: 14px;
         }
 
         .prix-montant {
             font-family: 'Fraunces', serif;
-            font-size: 44px;
+            font-size: 42px;
             font-weight: 700;
-            color: var(--encre);
+            color: var(--text);
             line-height: 1;
         }
 
         .prix-montant span {
-            font-size: 16px;
-            color: var(--encre-douce);
             font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text2);
             font-weight: 400;
         }
 
@@ -498,10 +522,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
-            color: var(--encre-douce);
-            padding: 6px 0;
-            border-bottom: 1px solid var(--ligne);
+            font-size: 13px;
+            color: var(--text2);
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border2);
         }
 
         .prix-features li:last-child { border-bottom: none; }
@@ -509,96 +533,148 @@
 
         .prix-btn {
             display: block;
-            padding: 13px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: var(--radius);
             text-decoration: none;
             font-size: 14px;
             font-weight: 700;
-            transition: transform 0.15s, box-shadow 0.15s;
             text-align: center;
+            transition: all 0.2s;
         }
 
         .prix-btn-primary {
             background: var(--vert);
-            color: white;
+            color: #0A0F0D;
         }
 
         .prix-btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(27,67,50,0.25);
+            background: var(--vert-dim);
+            box-shadow: 0 0 20px rgba(0,201,122,0.3);
         }
 
         .prix-btn-outline {
-            border: 2px solid var(--ligne);
-            color: var(--encre);
+            border: 1px solid var(--border2);
+            color: var(--text2);
         }
 
         .prix-btn-outline:hover {
-            border-color: var(--vert);
-            color: var(--vert);
+            border-color: var(--border);
+            color: var(--text);
+            background: var(--bg-hover);
         }
 
-        /* ── VISION ── */
+        /* VISION */
         .vision {
-            background: linear-gradient(135deg, var(--vert) 0%, #0D2B1F 100%);
+            background: var(--bg-card);
+            border-top: 1px solid var(--border2);
+            border-bottom: 1px solid var(--border2);
             text-align: center;
         }
-
-        .vision .section-eyebrow { color: var(--or); }
-        .vision .section-titre { color: white; margin-bottom: 16px; }
-        .vision .section-sous { color: #AAA; margin: 0 auto 56px; }
 
         .pays-grille {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             justify-content: center;
-            margin-bottom: 48px;
+            margin-bottom: 56px;
         }
 
         .pays-badge {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: white;
-            padding: 8px 20px;
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            color: var(--text2);
+            padding: 8px 18px;
             border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
         }
 
-        /* ── CTA FINAL ── */
-        .cta-final {
-            background: var(--papier);
-            text-align: center;
+        .pays-badge:hover {
+            border-color: var(--border);
+            color: var(--vert);
+            background: var(--bg-hover);
         }
+
+        .pays-badge.actif {
+            border-color: rgba(0,201,122,0.3);
+            color: var(--vert);
+            background: rgba(0,201,122,0.06);
+        }
+
+        .vision-stats {
+            display: flex;
+            gap: 64px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .vision-stat-val {
+            font-family: 'Fraunces', serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--vert);
+            text-shadow: 0 0 24px rgba(0,201,122,0.3);
+        }
+
+        .vision-stat-lbl {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* CTA FINAL */
+        .cta-final { background: var(--bg); text-align: center; }
 
         .cta-box {
-            background: white;
-            border: 1px solid var(--ligne);
-            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
             padding: 72px 40px;
-            max-width: 700px;
+            max-width: 680px;
             margin: 0 auto;
-            box-shadow: 0 4px 40px rgba(27,67,50,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -100px; left: 50%;
+            transform: translateX(-50%);
+            width: 400px; height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,201,122,0.08) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .cta-box h2 {
-            font-size: clamp(28px, 4vw, 44px);
-            color: var(--encre);
-            margin-bottom: 16px;
+            font-size: clamp(26px, 4vw, 42px);
+            margin-bottom: 14px;
+            position: relative;
         }
 
         .cta-box p {
-            color: var(--encre-douce);
-            font-size: 17px;
+            color: var(--text2);
+            font-size: 16px;
             margin-bottom: 36px;
+            position: relative;
         }
 
-        /* ── FOOTER ── */
+        .cta-btns {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        /* FOOTER */
         footer {
-            background: var(--encre);
-            color: #888;
-            padding: 48px 60px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border2);
+            padding: 40px 48px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -608,9 +684,20 @@
 
         .footer-logo {
             font-family: 'Fraunces', serif;
-            font-size: 20px;
-            color: white;
+            font-size: 18px;
             font-weight: 700;
+            color: var(--vert);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-logo::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--vert);
+            box-shadow: 0 0 6px var(--vert);
         }
 
         .footer-links {
@@ -619,35 +706,46 @@
         }
 
         .footer-links a {
-            color: #888;
+            color: var(--text3);
             text-decoration: none;
             font-size: 13px;
             transition: color 0.2s;
         }
 
-        .footer-links a:hover { color: white; }
+        .footer-links a:hover { color: var(--vert); }
 
-        .footer-copy {
-            font-size: 12px;
+        .footer-copy { font-size: 12px; color: var(--text3); }
+
+        .sol-icon .ti, .sec-icon .ti, .pb-icon .ti {
+            font-size: 32px;
+            color: var(--vert);
+            display: block;
+            margin-bottom: 12px;
         }
-
-        /* ── ANIMATIONS ── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
+        .sec-icon .ti { color: var(--vert); }
+        .sol-carte:hover .sol-icon .ti {
+            text-shadow: 0 0 16px rgba(0,201,122,0.5);
         }
-
-        /* ── RESPONSIVE ── */
+        /* RESPONSIVE */
         @media (max-width: 900px) {
-            nav { padding: 14px 20px; }
+            nav { padding: 0 16px; }
             .nav-links { display: none; }
-            .probleme-grille { grid-template-columns: 1fr; }
-            .solution-grille { grid-template-columns: repeat(2, 1fr); }
-            .securite-grille { grid-template-columns: 1fr; }
+            .pb-grille { grid-template-columns: 1fr; }
+            .sol-grille { grid-template-columns: repeat(2, 1fr); }
+            .sec-grille { grid-template-columns: 1fr; }
             .prix-grille { grid-template-columns: 1fr; }
-            .prix-carte.populaire { transform: none; }
-            footer { flex-direction: column; text-align: center; padding: 32px 20px; }
-            .hero-stats { flex-direction: column; gap: 24px; }
+            .prix-carte.pop { transform: none; }
+            .hero-stats { gap: 28px; }
+            footer { flex-direction: column; text-align: center; padding: 28px 20px; }
+            .vision-stats { gap: 36px; }
+        }
+
+        @media (max-width: 600px) {
+            .sol-grille { grid-template-columns: repeat(2, 1fr); }
+            .hero h1 { font-size: 34px; }
+            .hero-stats { flex-direction: column; gap: 20px; align-items: center; }
+            .cta-box { padding: 40px 20px; }
+            section { padding: 64px 16px; }
         }
     </style>
 </head>
@@ -663,49 +761,38 @@
             <li><a href="#vision">Vision</a></li>
         </ul>
         <div class="nav-cta">
-            <a href="https://gestpme.onrender.com/login" class="btn-outline">Se connecter</a>
-            <a href="https://gestpme.onrender.com/inscription" class="btn-primary">Commencer gratuitement</a>
+            <a href="https://gestpme.onrender.com/login" class="btn-nav-outline">Se connecter</a>
+            <a href="https://gestpme.onrender.com/inscription" class="btn-nav-primary">Commencer gratuitement</a>
         </div>
     </nav>
 
     <!-- HERO -->
     <section class="hero">
-        <div style="position:relative; z-index:1;">
-            <div class="hero-badge">
-                🌍 Conçu pour l'Afrique de l'Ouest
-            </div>
-            <h1>
-                Gérez votre PME.<br>
-                <span>Connectée à la DGI.</span>
-            </h1>
-            <p class="hero-sous">
-                GestPME est la première plateforme sécurisée de gestion commerciale
-                qui connecte les PME béninoises à la supervision fiscale en temps réel.
-            </p>
+        <div class="hero-grid"></div>
+        <div style="position:relative; z-index:1; width:100%;">
+            <div class="hero-badge">🌍 Conçu pour l'Afrique de l'Ouest</div>
+            <h1>Gérez votre PME.<br><span>Connectée à la DGI.</span></h1>
+            <p class="hero-sous">GestPME est la première plateforme sécurisée de gestion commerciale qui connecte les PME béninoises à la supervision fiscale en temps réel.</p>
             <div class="hero-ctas">
-                <a href="https://gestpme.onrender.com/inscription" class="hero-cta-primary">
-                    🚀 Commencer gratuitement
-                </a>
-                <a href="#fonctionnalites" class="hero-cta-secondary">
-                    Voir les fonctionnalités →
-                </a>
+                <a href="https://gestpme.onrender.com/inscription" class="btn-hero-primary">🚀 Commencer gratuitement</a>
+                <a href="#fonctionnalites" class="btn-hero-secondary">Voir les fonctionnalités →</a>
             </div>
             <div class="hero-stats">
                 <div>
-                    <div class="hero-stat-valeur">8+</div>
-                    <div class="hero-stat-label">Modules métier</div>
+                    <div class="hero-stat-val">8+</div>
+                    <div class="hero-stat-lbl">Modules métier</div>
                 </div>
                 <div>
-                    <div class="hero-stat-valeur">4</div>
-                    <div class="hero-stat-label">Niveaux de rôles</div>
+                    <div class="hero-stat-val">5</div>
+                    <div class="hero-stat-lbl">Niveaux de rôles</div>
                 </div>
                 <div>
-                    <div class="hero-stat-valeur">100%</div>
-                    <div class="hero-stat-label">Sécurisé OWASP</div>
+                    <div class="hero-stat-val">100%</div>
+                    <div class="hero-stat-lbl">Sécurisé OWASP</div>
                 </div>
                 <div>
-                    <div class="hero-stat-valeur">8</div>
-                    <div class="hero-stat-label">Pays CEDEAO visés</div>
+                    <div class="hero-stat-val">8</div>
+                    <div class="hero-stat-lbl">Pays CEDEAO visés</div>
                 </div>
             </div>
         </div>
@@ -714,82 +801,80 @@
     <!-- PROBLÈME -->
     <section class="probleme">
         <div class="container">
-            <div class="section-eyebrow">Le problème</div>
-            <h2 class="section-titre" style="color:white;">Les PME africaines méritent mieux</h2>
-            <p class="section-sous">La majorité des petites entreprises d'Afrique de l'Ouest gèrent encore leurs activités sur papier, sans aucune visibilité financière ni conformité fiscale.</p>
-
-            <div class="probleme-grille">
-                <div class="probleme-carte">
-                    <div class="probleme-icon">📋</div>
-                    <div class="probleme-titre">Gestion manuelle</div>
-                    <div class="probleme-desc">Les ventes, stocks et factures sont gérés sur papier ou dans des fichiers Excel non sécurisés, sans traçabilité.</div>
+            <div class="eyebrow">Le problème</div>
+            <h2 class="section-title">Les PME africaines méritent mieux</h2>
+            <p class="section-sub">La majorité des petites entreprises d'Afrique de l'Ouest gèrent encore leurs activités sur papier, sans visibilité financière ni conformité fiscale.</p>
+            <div class="pb-grille">
+                <div class="pb-carte">
+                    <div class="pb-icon">📋</div>
+                    <div class="pb-titre">Gestion manuelle</div>
+                    <div class="pb-desc">Les ventes, stocks et factures sont gérés sur papier ou dans des fichiers Excel non sécurisés, sans traçabilité.</div>
                 </div>
-                <div class="probleme-carte">
-                    <div class="probleme-icon">🏛️</div>
-                    <div class="probleme-titre">Opacité fiscale</div>
-                    <div class="probleme-desc">La DGI n'a aucun outil de supervision en temps réel — les déclarations fiscales sont approximatives et tardives.</div>
+                <div class="pb-carte">
+                    <div class="pb-icon">🏛️</div>
+                    <div class="pb-titre">Opacité fiscale</div>
+                    <div class="pb-desc">La DGI n'a aucun outil de supervision en temps réel — les déclarations fiscales sont approximatives et tardives.</div>
                 </div>
-                <div class="probleme-carte">
-                    <div class="probleme-icon">📦</div>
-                    <div class="probleme-titre">Stocks incontrôlés</div>
-                    <div class="probleme-desc">Les ruptures de stock et les pertes financières sont fréquentes faute d'un suivi précis de l'inventaire.</div>
+                <div class="pb-carte">
+                    <div class="pb-icon">📦</div>
+                    <div class="pb-titre">Stocks incontrôlés</div>
+                    <div class="pb-desc">Les ruptures de stock et les pertes financières sont fréquentes faute d'un suivi précis de l'inventaire.</div>
                 </div>
-                <div class="probleme-carte">
-                    <div class="probleme-icon">💸</div>
-                    <div class="probleme-titre">Bénéfices invisibles</div>
-                    <div class="probleme-desc">Les dirigeants ne savent pas si leur entreprise est rentable — sans séparation des biens, les décisions sont prises à l'aveugle.</div>
+                <div class="pb-carte">
+                    <div class="pb-icon">💸</div>
+                    <div class="pb-titre">Bénéfices invisibles</div>
+                    <div class="pb-desc">Les dirigeants ne savent pas si leur entreprise est rentable — sans séparation des biens, les décisions sont prises à l'aveugle.</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SOLUTION / FONCTIONNALITÉS -->
+    <!-- SOLUTION -->
     <section class="solution" id="fonctionnalites">
         <div class="container">
-            <div class="section-eyebrow">La solution</div>
-            <h2 class="section-titre">Tout ce dont votre PME a besoin</h2>
-            <p class="section-sous">GestPME centralise toutes vos opérations commerciales dans une interface simple et sécurisée, accessible depuis n'importe quel appareil.</p>
-
-            <div class="solution-grille">
-                <div class="solution-carte">
-                    <div class="solution-icone">🛒</div>
-                    <div class="solution-nom">Ventes</div>
-                    <div class="solution-desc">Enregistrement, modification, annulation avec mise à jour automatique du stock</div>
+            <div class="eyebrow">La solution</div>
+            <h2 class="section-title">Tout ce dont votre PME a besoin</h2>
+            <p class="section-sub">GestPME centralise toutes vos opérations commerciales dans une interface simple et sécurisée, accessible depuis n'importe quel appareil.</p>
+            <div class="sol-grille">
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-shopping-cart"></i></div>
+                    <div class="sol-nom">Ventes</div>
+                    <div class="sol-desc">Enregistrement, modification, annulation avec mise à jour automatique du stock</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">📦</div>
-                    <div class="solution-nom">Stocks</div>
-                    <div class="solution-desc">Inventaire journalier, réapprovisionnement, alertes de rupture en temps réel</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-box"></i></div>
+                    <div class="sol-nom">Stocks</div>
+                    <div class="sol-desc">Inventaire journalier, réapprovisionnement, alertes de rupture en temps réel</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">🧾</div>
-                    <div class="solution-nom">Factures PDF</div>
-                    <div class="solution-desc">Génération automatique avec calcul TVA 18%, export PDF professionnel</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-receipt"></i></div>
+                    <div class="sol-nom">Factures PDF</div>
+                    <div class="sol-desc">Génération automatique avec calcul TVA 18%, export PDF professionnel</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">💰</div>
-                    <div class="solution-nom">Bénéfices</div>
-                    <div class="solution-desc">Marge par produit, résultat net, principe de séparation des biens</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-trending-up"></i></div>
+                    <div class="sol-nom">Bénéfices</div>
+                    <div class="sol-desc">Marge par produit, résultat net, principe de séparation des biens</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">🏛️</div>
-                    <div class="solution-nom">Espace DGI</div>
-                    <div class="solution-desc">Supervision fiscale nationale en temps réel, validation des factures</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-landmark"></i></div>
+                    <div class="sol-nom">Espace DGI</div>
+                    <div class="sol-desc">Supervision fiscale nationale en temps réel, validation des factures</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">📈</div>
-                    <div class="solution-nom">Recettes</div>
-                    <div class="solution-desc">Graphiques d'évolution journalière, comparaison J/J-1</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-chart-line"></i></div>
+                    <div class="sol-nom">Recettes</div>
+                    <div class="sol-desc">Graphiques d'évolution journalière, comparaison J/J-1</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">🏦</div>
-                    <div class="solution-nom">Patrimoine</div>
-                    <div class="solution-desc">Trésorerie + valeur du stock — ce que possède vraiment l'entreprise</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-building-bank"></i></div>
+                    <div class="sol-nom">Patrimoine</div>
+                    <div class="sol-desc">Trésorerie + valeur du stock — ce que possède vraiment l'entreprise</div>
                 </div>
-                <div class="solution-carte">
-                    <div class="solution-icone">👥</div>
-                    <div class="solution-nom">Multi-rôles</div>
-                    <div class="solution-desc">Gérant, Admin PME, Superviseur DGI — chacun avec ses accès</div>
+                <div class="sol-carte">
+                    <div class="sol-icon"><i class="ti ti-users"></i></div>
+                    <div class="sol-nom">Multi-rôles</div>
+                    <div class="sol-desc">Gérant, Admin PME, Superviseur DGI — chacun avec ses accès</div>
                 </div>
             </div>
         </div>
@@ -798,40 +883,39 @@
     <!-- SÉCURITÉ -->
     <section class="securite" id="securite">
         <div class="container">
-            <div class="section-eyebrow">Sécurité</div>
-            <h2 class="section-titre">Conçu pour la confiance</h2>
-            <p class="section-sous">GestPME a été soumis à des tests d'intrusion complets selon le référentiel OWASP Top 10 — aucune compromis sur la sécurité de vos données.</p>
-
-            <div class="securite-grille">
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">🔐</div>
-                    <div class="securite-titre">MFA Google Authenticator</div>
-                    <div class="securite-desc">Authentification à deux facteurs — même si votre mot de passe est volé, votre compte reste protégé.</div>
+            <div class="eyebrow">Sécurité</div>
+            <h2 class="section-title">Conçu pour la confiance</h2>
+            <p class="section-sub">GestPME a été soumis à des tests d'intrusion complets selon le référentiel OWASP Top 10 — aucun compromis sur la sécurité de vos données.</p>
+            <div class="sec-grille">
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-shield-lock"></i></div>
+                    <div class="sec-titre">MFA Google Authenticator</div>
+                    <div class="sec-desc">Authentification à deux facteurs — même si votre mot de passe est volé, votre compte reste protégé.</div>
                 </div>
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">🛡️</div>
-                    <div class="securite-titre">Pentest OWASP documenté</div>
-                    <div class="securite-desc">Tests d'injection SQL, IDOR, contrôle d'accès — toutes les vulnérabilités identifiées et corrigées.</div>
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-shield-check"></i></div>
+                    <div class="sec-titre">Pentest OWASP documenté</div>
+                    <div class="sec-desc">Tests d'injection SQL, IDOR, contrôle d'accès — toutes les vulnérabilités identifiées et corrigées.</div>
                 </div>
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">👥</div>
-                    <div class="securite-titre">RBAC à 4 niveaux</div>
-                    <div class="securite-desc">Gérant, Admin PME, Super-Admin, DGI — isolation complète entre les rôles et les entreprises.</div>
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-users"></i></div>
+                    <div class="sec-titre">RBAC à 5 niveaux</div>
+                    <div class="sec-desc">Gérant, Admin PME, Super-Admin, DGI — isolation complète entre les rôles et les entreprises.</div>
                 </div>
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">🔒</div>
-                    <div class="securite-titre">Hash scrypt des mots de passe</div>
-                    <div class="securite-desc">Algorithme de hachage résistant aux attaques par force brute — bien supérieur à MD5 ou SHA256.</div>
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-lock"></i></div>
+                    <div class="sec-titre">Hash scrypt</div>
+                    <div class="sec-desc">Algorithme de hachage résistant aux attaques par force brute — bien supérieur à MD5 ou SHA256.</div>
                 </div>
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">📋</div>
-                    <div class="securite-titre">Journal d'audit complet</div>
-                    <div class="securite-desc">Chaque mouvement de stock, chaque vente est tracé avec horodatage et utilisateur responsable.</div>
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-clipboard-list"></i></div>
+                    <div class="sec-titre">Journal d'audit</div>
+                    <div class="sec-desc">Chaque mouvement de stock, chaque vente est tracé avec horodatage et utilisateur responsable.</div>
                 </div>
-                <div class="securite-carte">
-                    <div style="font-size:28px; margin-bottom:12px;">🔏</div>
-                    <div class="securite-titre">HTTPS + Données chiffrées</div>
-                    <div class="securite-desc">Toutes les communications sont chiffrées — vos données financières ne transitent jamais en clair.</div>
+                <div class="sec-carte">
+                    <div class="sec-icon"><i class="ti ti-lock-access"></i></div>
+                    <div class="sec-titre">HTTPS + Données chiffrées</div>
+                    <div class="sec-desc">Toutes les communications sont chiffrées — vos données financières ne transitent jamais en clair.</div>
                 </div>
             </div>
         </div>
@@ -840,10 +924,9 @@
     <!-- PRIX -->
     <section class="prix" id="prix">
         <div class="container" style="text-align:center;">
-            <div class="section-eyebrow">Tarifs</div>
-            <h2 class="section-titre">Simple et transparent</h2>
-            <p class="section-sous" style="margin: 0 auto 56px;">Commencez gratuitement. Évoluez quand vous êtes prêt. Payez par Mobile Money (MTN MoMo ou Moov Money).</p>
-
+            <div class="eyebrow">Tarifs</div>
+            <h2 class="section-title">Simple et transparent</h2>
+            <p class="section-sub" style="margin:0 auto 56px;">Commencez gratuitement. Évoluez quand vous êtes prêt. Payez par Mobile Money.</p>
             <div class="prix-grille">
                 <div class="prix-carte">
                     <div class="prix-plan">Starter</div>
@@ -857,22 +940,19 @@
                     </ul>
                     <a href="https://gestpme.onrender.com/inscription" class="prix-btn prix-btn-outline">Commencer gratuitement</a>
                 </div>
-
-                <div class="prix-carte populaire">
-                    <div class="badge-pop">⭐ Le plus populaire</div>
+                <div class="prix-carte pop">
+                    <div class="badge-pop">⭐ Populaire</div>
                     <div class="prix-plan">PME</div>
                     <div class="prix-montant">5 000 <span>FCFA/mois</span></div>
                     <ul class="prix-features">
                         <li>5 utilisateurs</li>
                         <li>Produits illimités</li>
                         <li>Ventes illimitées</li>
-                        <li>Factures PDF + export</li>
                         <li>Admin PME temps réel</li>
                         <li>MFA inclus</li>
                     </ul>
                     <a href="https://gestpme.onrender.com/abonnement" class="prix-btn prix-btn-primary">S'abonner maintenant</a>
                 </div>
-
                 <div class="prix-carte">
                     <div class="prix-plan">Business</div>
                     <div class="prix-montant">15 000 <span>FCFA/mois</span></div>
@@ -882,9 +962,8 @@
                         <li>API publique</li>
                         <li>Rapports avancés</li>
                         <li>Support prioritaire</li>
-                        <li>Intégration DGI directe</li>
                     </ul>
-                    <a href="https://gestpme.onrender.com/inscription" class="prix-btn prix-btn-outline">Nous contacter</a>
+                    <a href="mailto:virgilezossou@gmail.com" class="prix-btn prix-btn-outline">Nous contacter</a>
                 </div>
             </div>
         </div>
@@ -893,12 +972,11 @@
     <!-- VISION -->
     <section class="vision" id="vision">
         <div class="container">
-            <div class="section-eyebrow">Notre vision</div>
-            <h2 class="section-titre">L'Afrique de l'Ouest, un pays à la fois</h2>
-            <p class="section-sous">GestPME est né au Bénin, mais sa vision est régionale. Nous voulons connecter les PME de toute la CEDEAO à l'économie formelle et aux outils fiscaux de leurs pays respectifs.</p>
-
+            <div class="eyebrow">Notre vision</div>
+            <h2 class="section-title">L'Afrique de l'Ouest, un pays à la fois</h2>
+            <p class="section-sub" style="margin:0 auto 48px;">GestPME est né au Bénin, mais sa vision est régionale. Nous voulons connecter les PME de toute la CEDEAO à l'économie formelle.</p>
             <div class="pays-grille">
-                <div class="pays-badge">🇧🇯 Bénin — En ligne</div>
+                <div class="pays-badge actif">🇧🇯 Bénin — En ligne</div>
                 <div class="pays-badge">🇹🇬 Togo — Bientôt</div>
                 <div class="pays-badge">🇧🇫 Burkina Faso — Bientôt</div>
                 <div class="pays-badge">🇨🇮 Côte d'Ivoire — Bientôt</div>
@@ -907,19 +985,18 @@
                 <div class="pays-badge">🇲🇱 Mali — Bientôt</div>
                 <div class="pays-badge">🇳🇪 Niger — Bientôt</div>
             </div>
-
-            <div style="display:flex; gap:48px; justify-content:center; flex-wrap:wrap;">
-                <div style="text-align:center;">
-                    <div style="font-family:'Fraunces',serif; font-size:44px; font-weight:700; color:var(--or);">50M+</div>
-                    <div style="color:#888; font-size:14px; margin-top:4px;">PME en Afrique de l'Ouest</div>
+            <div class="vision-stats">
+                <div>
+                    <div class="vision-stat-val">50M+</div>
+                    <div class="vision-stat-lbl">PME en Afrique de l'Ouest</div>
                 </div>
-                <div style="text-align:center;">
-                    <div style="font-family:'Fraunces',serif; font-size:44px; font-weight:700; color:var(--or);">8</div>
-                    <div style="color:#888; font-size:14px; margin-top:4px;">Pays CEDEAO ciblés</div>
+                <div>
+                    <div class="vision-stat-val">8</div>
+                    <div class="vision-stat-lbl">Pays CEDEAO ciblés</div>
                 </div>
-                <div style="text-align:center;">
-                    <div style="font-family:'Fraunces',serif; font-size:44px; font-weight:700; color:var(--or);">FCFA</div>
-                    <div style="color:#888; font-size:14px; margin-top:4px;">Monnaie commune partagée</div>
+                <div>
+                    <div class="vision-stat-val">FCFA</div>
+                    <div class="vision-stat-lbl">Monnaie commune</div>
                 </div>
             </div>
         </div>
@@ -931,13 +1008,9 @@
             <div class="cta-box">
                 <h2>Prêt à moderniser votre PME ?</h2>
                 <p>Rejoignez les premières entreprises béninoises sur GestPME. C'est gratuit pour commencer.</p>
-                <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-                    <a href="https://gestpme.onrender.com/inscription" class="hero-cta-primary">
-                        🚀 Créer mon compte gratuitement
-                    </a>
-                    <a href="mailto:virgilezossou@gmail.com" class="hero-cta-secondary">
-                        📩 Nous contacter
-                    </a>
+                <div class="cta-btns">
+                    <a href="https://gestpme.onrender.com/inscription" class="btn-hero-primary">🚀 Créer mon compte gratuitement</a>
+                    <a href="mailto:virgilezossou@gmail.com" class="btn-hero-secondary">📩 Nous contacter</a>
                 </div>
             </div>
         </div>
@@ -952,29 +1025,13 @@
             <a href="#securite">Sécurité</a>
             <a href="mailto:virgilezossou@gmail.com">Contact</a>
         </div>
-        <div class="footer-copy">
-            © 2026 GestPME · Cotonou, République du Bénin · Fait par virgile_tech
-        </div>
+        <div class="footer-copy">© 2026 GestPME · Cotonou, Bénin</div>
     </footer>
 
     <script>
-        // Nav scroll effect
         window.addEventListener('scroll', () => {
             document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
         });
-
-        // Animation au scroll (cartes solution)
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry, i) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.classList.add('visible');
-                    }, i * 80);
-                }
-            });
-        }, { threshold: 0.1 });
-
-        document.querySelectorAll('.solution-carte').forEach(el => observer.observe(el));
     </script>
 </body>
 </html>
