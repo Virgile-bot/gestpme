@@ -6,125 +6,338 @@
     <title>GestPME — Tableau de bord</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body class="page-dashboard">
-    <header class="topbar">
-        <div class="topbar-logo">GestPME</div>
-        <div class="topbar-user">
-            <span>{{ nom }}</span>
-            <a href="/logout" class="btn-logout"><i class="ti ti-logout"></i> Déconnexion</a>
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-dot"></div>
+            <span class="sidebar-brand-name">GestPME</span>
         </div>
-    </header>
 
-    <main class="contenu">
-        <h1>Tableau de bord</h1>
-        <p>Bienvenue, {{ nom }}. Voici l'état de votre activité aujourd'hui.</p>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">Principal</div>
 
-        <div class="cartes">
-            <div class="carte">
-                <div class="carte-label">Ventes du jour</div>
-                <div class="carte-valeur">{{ total_jour }} F</div>
-                {% if variation_pct is not none %}
-                    <div style="font-size:11px; margin-top:6px; color:{{ 'var(--vert)' if variation_pct >= 0 else 'var(--rouge)' }}; font-weight:600;">
-                        {{ '▲' if variation_pct >= 0 else '▼' }} {{ variation_pct }}% vs hier ({{ total_veille }} F)
+            <a href="/dashboard" class="sidebar-link active">
+                <i class="ti ti-layout-dashboard"></i>
+                <span class="sidebar-link-label">Tableau de bord</span>
+            </a>
+            <a href="/ventes/nouvelle" class="sidebar-link">
+                <i class="ti ti-plus"></i>
+                <span class="sidebar-link-label">Nouvelle vente</span>
+            </a>
+            <a href="/ventes" class="sidebar-link">
+                <i class="ti ti-shopping-cart"></i>
+                <span class="sidebar-link-label">Historique ventes</span>
+            </a>
+            <a href="/recettes-journalieres" class="sidebar-link">
+                <i class="ti ti-chart-line"></i>
+                <span class="sidebar-link-label">Recettes</span>
+            </a>
+
+            <div class="sidebar-section">Gestion</div>
+
+            <a href="/stocks" class="sidebar-link">
+                <i class="ti ti-box"></i>
+                <span class="sidebar-link-label">Stocks</span>
+            </a>
+            <a href="/factures" class="sidebar-link">
+                <i class="ti ti-receipt"></i>
+                <span class="sidebar-link-label">Factures</span>
+            </a>
+            <a href="/depenses" class="sidebar-link">
+                <i class="ti ti-credit-card"></i>
+                <span class="sidebar-link-label">Dépenses</span>
+            </a>
+            <a href="/stocks/inventaire" class="sidebar-link">
+                <i class="ti ti-clipboard-list"></i>
+                <span class="sidebar-link-label">Inventaire</span>
+            </a>
+
+            <div class="sidebar-section">Compte</div>
+
+            <a href="/abonnement" class="sidebar-link">
+                <i class="ti ti-star"></i>
+                <span class="sidebar-link-label">Abonnement</span>
+            </a>
+            <a href="/mfa/parametres" class="sidebar-link">
+                <i class="ti ti-shield-lock"></i>
+                <span class="sidebar-link-label">Sécurité MFA</span>
+            </a>
+            <a href="/logout" class="sidebar-link">
+                <i class="ti ti-logout"></i>
+                <span class="sidebar-link-label">Déconnexion</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">{{ nom[0]|upper }}</div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name">{{ nom }}</div>
+                    <div class="sidebar-user-role">Gérant</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-logo">GestPME</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="ti ti-menu-2"></i>
+            </button>
+            <div class="topbar-search">
+                <i class="ti ti-search" style="font-size:16px; flex-shrink:0;"></i>
+                <input type="text" placeholder="Rechercher...">
+            </div>
+            <div class="topbar-actions">
+                <div class="topbar-icon-btn">
+                    <i class="ti ti-bell"></i>
+                    {% if alerte_stock %}<div class="notif-dot"></div>{% endif %}
+                </div>
+                <a href="/logout" class="btn-logout">
+                    <i class="ti ti-logout"></i>
+                    <span>Sortir</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- CONTENU -->
+        <div class="contenu">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header" style="padding-left:0; padding-right:0;">
+                <div class="page-header-left">
+                    <h1>Tableau de bord</h1>
+                    <p>Bienvenue, {{ nom }} — voici l'activité du jour</p>
+                </div>
+                <div class="page-header-right">
+                    <a href="/ventes/nouvelle" class="btn-action">
+                        <i class="ti ti-plus"></i> Nouvelle vente
+                    </a>
+                </div>
+            </div>
+
+            <!-- STAT CARDS -->
+            <div class="cartes">
+                <div class="carte">
+                    <div class="carte-top">
+                        <div class="carte-icon green"><i class="ti ti-trending-up"></i></div>
+                        <div class="carte-trend up"><i class="ti ti-arrow-up" style="font-size:10px;"></i> Aujourd'hui</div>
                     </div>
-                {% else %}
-                    <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
-                        Hier : {{ total_veille }} F
+                    <div class="carte-label">Recette du jour</div>
+                    <div class="carte-valeur">{{ "%.0f"|format(recette_jour|float) }} F</div>
+                    <div class="carte-sub">{{ nb_ventes_jour }} vente(s) enregistrée(s)</div>
+                </div>
+                <div class="carte">
+                    <div class="carte-top">
+                        <div class="carte-icon blue"><i class="ti ti-calendar-month"></i></div>
+                        <div class="carte-trend up">Ce mois</div>
                     </div>
-                {% endif %}
-            </div>
-            <div class="carte">
-                <div class="carte-label">Ventes (aujourd'hui)</div>
-                <div class="carte-valeur">{{ nombre_ventes }}</div>
-                <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
-                    Hier : {{ nombre_ventes_veille }} vente(s)
+                    <div class="carte-label">Recette du mois</div>
+                    <div class="carte-valeur">{{ "%.0f"|format(recette_mois|float) }} F</div>
+                    <div class="carte-sub">{{ nb_ventes_mois }} vente(s) ce mois</div>
+                </div>
+                <div class="carte">
+                    <div class="carte-top">
+                        <div class="carte-icon green"><i class="ti ti-package"></i></div>
+                        {% if nb_alertes > 0 %}
+                        <div class="carte-trend down"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> {{ nb_alertes }} alerte(s)</div>
+                        {% endif %}
+                    </div>
+                    <div class="carte-label">Produits en stock</div>
+                    <div class="carte-valeur">{{ nb_produits }}</div>
+                    <div class="carte-sub">{{ nb_alertes }} sous le seuil d'alerte</div>
+                </div>
+                <div class="carte">
+                    <div class="carte-top">
+                        <div class="carte-icon gold"><i class="ti ti-receipt"></i></div>
+                    </div>
+                    <div class="carte-label">Factures émises</div>
+                    <div class="carte-valeur">{{ nb_factures }}</div>
+                    <div class="carte-sub">Total ce mois</div>
                 </div>
             </div>
-            <div class="carte">
-                <div class="carte-label">Stock critique</div>
-                <div class="carte-valeur" style="color:{{ 'var(--rouge)' if nb_critique > 0 else 'var(--vert)' }}">
-                    {{ nb_critique }}
+
+            <!-- GRAPHIQUE + VENTES RÉCENTES -->
+            <div class="grid-2">
+
+                <!-- Graphique -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Évolution des recettes</div>
+                        <span class="card-action">7 derniers jours</span>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot" style="background:#00C97A;"></div>
+                            Recettes (FCFA)
+                        </div>
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot" style="background:#4F7FFF;"></div>
+                            Nb ventes
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-wrap" style="height:200px; margin-top:16px;">
+                            <canvas id="chartRecettes"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div style="font-size:11px; margin-top:6px; color:var(--encre-douce);">
-                    {{ 'article(s) à réapprovisionner' if nb_critique > 0 else 'Tous les stocks sont normaux' }}
+
+                <!-- Ventes récentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Ventes récentes</div>
+                        <a href="/ventes" class="card-action">Voir tout</a>
+                    </div>
+                    <div class="tx-list">
+                        {% for v in dernieres_ventes %}
+                        <div class="tx-item">
+                            <div class="tx-icon {{ 'green' if v.statut == 'payee' else 'red' }}">
+                                <i class="ti ti-shopping-bag"></i>
+                            </div>
+                            <div class="tx-info">
+                                <div class="tx-name">{{ v.client_nom }}</div>
+                                <div class="tx-date">{{ v.date_vente.strftime('%d/%m · %H:%M') }} · {{ v.nom_produit }}</div>
+                            </div>
+                            <div class="tx-amount credit">+{{ "%.0f"|format(v.montant_total|float) }} F</div>
+                        </div>
+                        {% else %}
+                        <div class="tx-item" style="justify-content:center; color:var(--t3); font-size:13px; padding:32px;">
+                            Aucune vente enregistrée
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
+
+            <!-- ALERTES STOCK -->
+            {% if produits_alerte %}
+            <div class="card" style="margin-bottom:var(--s4);">
+                <div class="card-header">
+                    <div class="card-title" style="color:var(--gold);">
+                        <i class="ti ti-alert-triangle"></i> Alertes stock
+                    </div>
+                    <a href="/stocks" class="card-action">Gérer les stocks</a>
+                </div>
+                <div class="tx-list">
+                    {% for p in produits_alerte %}
+                    <div class="tx-item">
+                        <div class="tx-icon red"><i class="ti ti-box"></i></div>
+                        <div class="tx-info">
+                            <div class="tx-name">{{ p.nom }}</div>
+                            <div class="tx-date">Seuil : {{ p.seuil_alerte }} · Stock actuel : {{ p.quantite_stock }}</div>
+                        </div>
+                        <div class="tx-amount" style="color:var(--red);">{{ p.quantite_stock }} unités</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
         </div>
+    </div>
 
-        <div class="modules-titre">Modules</div>
-
-        <div class="modules-grille">
-            <a href="/ventes/nouvelle" class="module-carte">
-                <div class="module-icone"><i class="ti ti-plus"></i></div>
-                <div class="module-nom">Nouvelle vente</div>
-                <div class="module-desc">Enregistrer une transaction et mettre à jour le stock</div>
-            </a>
-            <a href="/ventes" class="module-carte">
-                <div class="module-icone"><i class="ti ti-shopping-cart"></i></div>
-                <div class="module-nom">Historique des ventes</div>
-                <div class="module-desc">Consulter, modifier ou annuler les transactions</div>
-            </a>
-            <a href="/recettes-journalieres" class="module-carte">
-                <div class="module-icone"><i class="ti ti-chart-line"></i></div>
-                <div class="module-nom">Recettes journalières</div>
-                <div class="module-desc">Évolution des recettes jour par jour, en graphique</div>
-            </a>
-            <a href="/stocks" class="module-carte">
-                <div class="module-icone"><i class="ti ti-box"></i></div>
-                <div class="module-nom">Stocks & inventaire</div>
-                <div class="module-desc">Gérer vos produits et niveaux de stock</div>
-            </a>
-            <a href="/factures" class="module-carte">
-                <div class="module-icone"><i class="ti ti-receipt"></i></div>
-                <div class="module-nom">Factures</div>
-                <div class="module-desc">Générer et consulter vos factures avec TVA</div>
-            </a>
-            <a href="/depenses" class="module-carte">
-                <div class="module-icone"><i class="ti ti-credit-card"></i></div>
-                <div class="module-nom">Dépenses</div>
-                <div class="module-desc">Suivre les charges générales de l'entreprise</div>
-            </a>
-
-            <a href="/abonnement" class="module-carte module-dgi">
-                <div class="module-icone"><i class="ti ti-star"></i></div>
-                <div class="module-nom">Abonnement</div>
-                <div class="module-desc">Gérez votre plan et payez par Mobile Money</div>
-            </a>
-
-            <a href="/mfa/parametres" class="module-carte">
-                <div class="module-icone"><i class="ti ti-shield-lock"></i></div>
-                <div class="module-nom">Sécurité MFA</div>
-                <div class="module-desc">Activer l'authentification à deux facteurs</div>
-            </a>
-        </div>
-    </main>
-
-    <!-- WebSocket gérant — notifications de réapprovisionnement -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <div id="toast-gerant" style="position:fixed; top:70px; right:16px; z-index:9999;
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+    <div id="toast-gerant" style="position:fixed; top:calc(64px + 16px); right:16px; z-index:9999;
          display:flex; flex-direction:column; gap:10px; width:min(300px, calc(100vw - 32px));"></div>
-    <script>
-        const socket = io();
-        socket.on('connect', () => {
-            socket.emit('rejoindre_salle_gerant', {});
-        });
 
-        socket.on('stock_reapprovisionne', function(data) {
-            // Toast de notification
-            const container = document.getElementById('toast-gerant');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.borderLeftColor = 'var(--color-orange-400)';
-            toast.innerHTML = `
-                <div style="font-weight:700; font-size:13px;">📦 Stock réapprovisionné</div>
-                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${data.produit}</div>
-                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--color-orange-400); margin-top:4px;">+${data.quantite_ajoutee} unités</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Nouveau stock : ${data.nouveau_stock} · ${data.heure}</div>
-            `;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 6000);
-        });
+    <script>
+    // Sidebar toggle mobile
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+    }
+
+    // Graphique recettes
+    const ctx = document.getElementById('chartRecettes').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels_7j | tojson }},
+            datasets: [
+                {
+                    label: 'Recettes',
+                    data: {{ recettes_7j | tojson }},
+                    backgroundColor: 'rgba(0,201,122,0.15)',
+                    borderColor: '#00C97A',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Ventes',
+                    data: {{ nb_ventes_7j | tojson }},
+                    type: 'line',
+                    borderColor: '#4F7FFF',
+                    backgroundColor: 'transparent',
+                    pointBackgroundColor: '#4F7FFF',
+                    pointRadius: 4,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    ticks: { color: '#3D4F72', font: { size: 11 } }
+                },
+                y: {
+                    position: 'left',
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    ticks: {
+                        color: '#3D4F72', font: { size: 11 },
+                        callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v
+                    }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#4F7FFF', font: { size: 10 } }
+                }
+            }
+        }
+    });
+
+    // WebSocket — stock réapprovisionné
+    const socket = io();
+    socket.on('connect', () => socket.emit('rejoindre_salle_gerant', {}));
+    socket.on('stock_reapprovisionne', function(data) {
+        const container = document.getElementById('toast-gerant');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.borderLeftColor = 'var(--gold)';
+        toast.innerHTML = `
+            <div style="font-weight:700; font-size:13px;">📦 Stock réapprovisionné</div>
+            <div style="font-size:12px; color:var(--t2); margin-top:2px;">${data.produit}</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:var(--gold); margin-top:4px;">+${data.quantite_ajoutee} unités</div>
+            <div style="font-size:11px; color:var(--t3); margin-top:2px;">Nouveau stock : ${data.nouveau_stock} · ${data.heure}</div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 6000);
+    });
     </script>
 </body>
 </html>

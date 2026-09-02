@@ -7,6 +7,7 @@ import qrcode
 import io
 import base64
 import secrets
+import re
 from datetime import datetime, timedelta
 from flask_mail import Mail, Message
 from flask_socketio import SocketIO, emit, join_room
@@ -19,6 +20,71 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 
 import os
 from datetime import datetime, timedelta
+
+
+# ===========================================================
+# VALIDATION IFU BÉNINOIS
+# ===========================================================
+
+def valider_format_ifu(ifu):
+    """
+    Valide le format de l'IFU béninois.
+    Format officiel : IFU + 13 chiffres (ex: IFU3200800176115)
+    Accepte aussi : 13 chiffres seuls (ajout automatique du préfixe IFU)
+    """
+    if not ifu:
+        return False, "L'IFU est obligatoire."
+
+    ifu = ifu.strip().upper().replace(' ', '').replace('-', '')
+
+    # Format avec préfixe IFU
+    if ifu.startswith('IFU'):
+        chiffres = ifu[3:]
+        if not chiffres.isdigit():
+            return False, "L'IFU ne doit contenir que des chiffres après le préfixe 'IFU'."
+        if len(chiffres) != 13:
+            return False, f"L'IFU doit contenir 13 chiffres après 'IFU' (vous en avez {len(chiffres)})."
+        return True, ifu
+
+    # Format numérique seul (13 chiffres)
+    if ifu.isdigit():
+        if len(ifu) != 13:
+            return False, f"L'IFU doit contenir 13 chiffres (vous en avez {len(ifu)})."
+        return True, f"IFU{ifu}"
+
+    return False, "Format IFU invalide. Exemples valides : IFU3200800176115 ou 3200800176115."
+
+
+def verifier_ifu_dgi(ifu):
+    """
+    Vérification de l'existence de l'IFU auprès de la DGI.
+    Actuellement en mode 'format only' — l'API DGI sera activée
+    dès que le partenariat officiel sera conclu.
+    """
+    DGI_API_KEY = os.environ.get('DGI_API_KEY')
+
+    if not DGI_API_KEY:
+        # Pas de clé API — on accepte si le format est valide
+        return True, "✓ Format IFU valide (vérification DGI activée après partenariat)"
+
+    # API DGI disponible — vérification réelle
+    try:
+        import urllib.request
+        import json
+        req = urllib.request.Request(
+            f"https://api.impots.bj/v1/ifu/verify/{ifu}",
+            headers={"Authorization": f"Bearer {DGI_API_KEY}", "Accept": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            if data.get('valide'):
+                return True, f"✓ IFU vérifié — {data.get('nom_entreprise', '')}"
+            else:
+                return False, "Cet IFU n'existe pas dans la base de la DGI."
+    except Exception:
+        # En cas d'échec API — on accepte le format valide
+        return True, "✓ Format IFU valide (connexion DGI indisponible momentanément)"
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
@@ -163,8 +229,37 @@ def accueil():
     return render_template('accueil.html')
 
 
-@app.route('/inscription', methods=['GET', 'POST'])
-def inscription():
+@app.route('/api/verifier-ifu', methods=['POST'])
+def api_verifier_ifu():
+    from flask import jsonify
+    ifu = request.get_json().get('ifu', '')
+
+    format_ok, ifu_result = valider_format_ifu(ifu)
+    if not format_ok:
+        return jsonify({'valide': False, 'message': ifu_result})
+
+    # Vérifier si déjà utilisé sur GestPME
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+    curseur.execute("SELECT nom_entreprise FROM pme WHERE ifu = %s", (ifu_result,))
+    existant = curseur.fetchone()
+    connexion.close()
+
+    if existant:
+        return jsonify({
+            'valide': False,
+            'message': f"Cet IFU est déjà enregistré pour '{existant['nom_entreprise']}' sur GestPME."
+        })
+
+    dgi_ok, dgi_msg = verifier_ifu_dgi(ifu_result)
+    return jsonify({
+        'valide': dgi_ok,
+        'ifu_formate': ifu_result,
+        'message': dgi_msg
+    })
+
+
+
     if request.method == 'POST':
         nom_entreprise = request.form['nom_entreprise']
         ifu = request.form['ifu']
@@ -174,18 +269,34 @@ def inscription():
         email = request.form['email']
         mot_de_passe = request.form['mot_de_passe']
 
+        # ── Validation format IFU ──
+        format_ok, ifu_result = valider_format_ifu(ifu)
+        if not format_ok:
+            return render_template('inscription.html', erreur=ifu_result)
+
+        # IFU normalisé (avec préfixe IFU garanti)
+        ifu = ifu_result
+
+        # ── Vérification existence IFU auprès DGI ──
+        dgi_ok, dgi_message = verifier_ifu_dgi(ifu)
+        if not dgi_ok:
+            return render_template('inscription.html',
+                erreur=f"IFU non reconnu par la DGI : {dgi_message}. Vérifiez votre numéro sur ifu.impots.bj")
+
         connexion = get_connexion()
         curseur = connexion.cursor()
 
+        # ── Vérification IFU déjà utilisé ──
         curseur.execute("SELECT id FROM pme WHERE ifu = %s", (ifu,))
         if curseur.fetchone():
             connexion.close()
-            return render_template('inscription.html', erreur="Cet IFU est déjà enregistré")
+            return render_template('inscription.html',
+                erreur="Cet IFU est déjà enregistré sur GestPME. Contactez le support si c'est une erreur.")
 
         curseur.execute("SELECT id FROM utilisateurs WHERE email = %s", (email,))
         if curseur.fetchone():
             connexion.close()
-            return render_template('inscription.html', erreur="Cet email est déjà utilisé")
+            return render_template('inscription.html', erreur="Cet email est déjà utilisé.")
 
         try:
             curseur.execute("""
@@ -202,7 +313,6 @@ def inscription():
 
             connexion.commit()
             connexion.close()
-
             return redirect('/login')
 
         except Exception as erreur:
@@ -359,52 +469,89 @@ def dashboard():
     connexion = get_connexion()
     curseur = connexion.cursor()
 
+    # Recette du jour
     curseur.execute("""
-        SELECT 
-            COALESCE(SUM(montant_total), 0) AS total_jour,
-            COUNT(*) AS nombre_ventes
-        FROM ventes
-        WHERE pme_id = %s AND DATE(date_vente) = CURDATE() AND statut != 'annulee'
+        SELECT COALESCE(SUM(montant_total), 0) AS total_jour, COUNT(*) AS nombre_ventes
+        FROM ventes WHERE pme_id = %s AND DATE(date_vente) = CURDATE() AND statut != 'annulee'
     """, (session['pme_id'],))
     ventes_jour = curseur.fetchone()
 
-    # Ventes du jour précédent, pour comparaison
+    # Recette du mois
     curseur.execute("""
-        SELECT 
-            COALESCE(SUM(montant_total), 0) AS total_veille,
-            COUNT(*) AS nombre_ventes_veille
-        FROM ventes
-        WHERE pme_id = %s AND DATE(date_vente) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND statut != 'annulee'
+        SELECT COALESCE(SUM(montant_total), 0) AS total_mois, COUNT(*) AS nombre_ventes_mois
+        FROM ventes WHERE pme_id = %s
+        AND MONTH(date_vente) = MONTH(CURDATE())
+        AND YEAR(date_vente) = YEAR(CURDATE())
+        AND statut != 'annulee'
     """, (session['pme_id'],))
-    ventes_veille = curseur.fetchone()
+    ventes_mois = curseur.fetchone()
+
+    # Produits et alertes stock
+    curseur.execute("""
+        SELECT COUNT(*) AS nb FROM produits WHERE pme_id = %s AND actif = TRUE
+    """, (session['pme_id'],))
+    nb_produits = curseur.fetchone()['nb']
 
     curseur.execute("""
-        SELECT COUNT(*) AS nb_critique
-        FROM produits
+        SELECT * FROM produits
         WHERE pme_id = %s AND actif = TRUE AND quantite_stock <= seuil_alerte
+        ORDER BY quantite_stock ASC LIMIT 5
     """, (session['pme_id'],))
-    stock_critique = curseur.fetchone()
+    produits_alerte = curseur.fetchall()
+
+    # Factures du mois
+    curseur.execute("""
+        SELECT COUNT(*) AS nb FROM factures f
+        JOIN ventes v ON v.id = f.vente_id
+        WHERE v.pme_id = %s AND MONTH(f.date_emission) = MONTH(CURDATE())
+        AND YEAR(f.date_emission) = YEAR(CURDATE())
+    """, (session['pme_id'],))
+    nb_factures = curseur.fetchone()['nb']
+
+    # Dernières ventes
+    curseur.execute("""
+        SELECT v.id, v.client_nom, v.montant_total, v.statut, v.date_vente,
+               p.nom AS nom_produit
+        FROM ventes v
+        JOIN lignes_vente lv ON lv.vente_id = v.id
+        JOIN produits p ON p.id = lv.produit_id
+        WHERE v.pme_id = %s
+        ORDER BY v.date_vente DESC LIMIT 6
+    """, (session['pme_id'],))
+    dernieres_ventes = curseur.fetchall()
+
+    # Données graphique 7 jours
+    curseur.execute("""
+        SELECT DATE(date_vente) AS jour,
+               COALESCE(SUM(montant_total), 0) AS total,
+               COUNT(*) AS nb
+        FROM ventes WHERE pme_id = %s AND statut != 'annulee'
+        AND date_vente >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(date_vente) ORDER BY jour ASC
+    """, (session['pme_id'],))
+    graphique = curseur.fetchall()
 
     connexion.close()
 
-    # Calcul de la variation en pourcentage par rapport à la veille
-    total_jour_f = float(ventes_jour['total_jour'])
-    total_veille_f = float(ventes_veille['total_veille'])
+    labels_7j = [str(r['jour']) for r in graphique]
+    recettes_7j = [float(r['total']) for r in graphique]
+    nb_ventes_7j = [int(r['nb']) for r in graphique]
 
-    if total_veille_f > 0:
-        variation_pct = round((total_jour_f - total_veille_f) / total_veille_f * 100, 1)
-    else:
-        variation_pct = None  # Pas de comparaison possible si la veille était à zéro
-
-    return render_template(
-        'dashboard.html',
+    return render_template('dashboard.html',
         nom=session['nom'],
-        total_jour=ventes_jour['total_jour'],
-        nombre_ventes=ventes_jour['nombre_ventes'],
-        nb_critique=stock_critique['nb_critique'],
-        total_veille=ventes_veille['total_veille'],
-        nombre_ventes_veille=ventes_veille['nombre_ventes_veille'],
-        variation_pct=variation_pct
+        recette_jour=ventes_jour['total_jour'],
+        nb_ventes_jour=ventes_jour['nombre_ventes'],
+        recette_mois=ventes_mois['total_mois'],
+        nb_ventes_mois=ventes_mois['nombre_ventes_mois'],
+        nb_produits=nb_produits,
+        nb_alertes=len(produits_alerte),
+        produits_alerte=produits_alerte,
+        nb_factures=nb_factures,
+        dernieres_ventes=dernieres_ventes,
+        labels_7j=labels_7j,
+        recettes_7j=recettes_7j,
+        nb_ventes_7j=nb_ventes_7j,
+        alerte_stock=len(produits_alerte) > 0
     )
 
 
