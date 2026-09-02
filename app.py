@@ -160,7 +160,7 @@ def super_admin_requis(fonction):
 
 @app.route('/')
 def accueil():
-    return render_template('accueil.html')
+  return render_template('landing.html')
 
 
 @app.route('/inscription', methods=['GET', 'POST'])
