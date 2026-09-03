@@ -19,9 +19,36 @@
         <div class="topbar-user">
             <span>{{ nom }}</span>
             <span class="badge-super">FONDATEUR</span>
+            <button onclick="declencherSauvegarde()" class="btn-logout" id="btn-sauvegarde" style="cursor:pointer; border:none;">
+                🗄️ Sauvegarder maintenant
+            </button>
             <a href="/logout" class="btn-logout">Déconnexion</a>
         </div>
     </header>
+
+    <script>
+        function declencherSauvegarde() {
+            const btn = document.getElementById('btn-sauvegarde');
+            const texteInitial = btn.textContent;
+            btn.textContent = '⏳ Sauvegarde en cours...';
+            btn.disabled = true;
+
+            fetch('/admin/sauvegarde/declencher/{{ backup_secret }}')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.succes) {
+                        alert(`✅ Sauvegarde envoyée par email !\n${data.lignes_sauvegardees} lignes · ${data.taille_ko} Ko`);
+                    } else {
+                        alert('❌ Erreur : ' + data.erreur);
+                    }
+                })
+                .catch(err => alert('❌ Erreur réseau : ' + err))
+                .finally(() => {
+                    btn.textContent = texteInitial;
+                    btn.disabled = false;
+                });
+        }
+    </script>
 
     <main class="contenu">
         <h1>Tableau de bord GestPME</h1>

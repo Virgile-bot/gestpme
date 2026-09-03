@@ -127,6 +127,131 @@ def get_connexion():
     return connexion
 
 
+# ===========================================================
+# SAUVEGARDE AUTOMATIQUE DE LA BASE DE DONNÉES
+# ===========================================================
+
+BACKUP_SECRET = os.environ.get('BACKUP_SECRET', 'change-moi-en-production')
+
+TABLES_A_SAUVEGARDER = [
+    'pme', 'utilisateurs', 'produits', 'ventes', 'lignes_vente',
+    'factures', 'depenses', 'mouvements_stock', 'notifications',
+    'abonnements', 'reset_tokens'
+]
+
+
+def echapper_valeur_sql(valeur):
+    """Échappe une valeur Python pour l'insérer dans une requête SQL brute."""
+    if valeur is None:
+        return "NULL"
+    if isinstance(valeur, (int, float)):
+        return str(valeur)
+    if isinstance(valeur, bool):
+        return "1" if valeur else "0"
+    # datetime, date, Decimal, str... → tout en chaîne échappée
+    texte = str(valeur).replace("\\", "\\\\").replace("'", "\\'")
+    return f"'{texte}'"
+
+
+def generer_dump_sql():
+    """
+    Génère un dump SQL complet (structure ignorée, uniquement les données)
+    de toutes les tables métier de GestPME, sous forme de texte.
+    """
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    lignes = [
+        f"-- Sauvegarde GestPME générée le {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}",
+        "-- Cette sauvegarde contient uniquement les DONNÉES (les tables doivent déjà exister).",
+        "SET FOREIGN_KEY_CHECKS=0;",
+        ""
+    ]
+
+    total_lignes_donnees = 0
+
+    for table in TABLES_A_SAUVEGARDER:
+        try:
+            curseur.execute(f"SELECT * FROM {table}")
+            lignes_table = curseur.fetchall()
+        except Exception as e:
+            lignes.append(f"-- Table '{table}' ignorée (erreur : {e})")
+            continue
+
+        if not lignes_table:
+            lignes.append(f"-- Table '{table}' vide")
+            continue
+
+        lignes.append(f"-- Table : {table} ({len(lignes_table)} ligne(s))")
+        lignes.append(f"DELETE FROM {table};")
+
+        colonnes = list(lignes_table[0].keys())
+        colonnes_sql = ", ".join(f"`{c}`" for c in colonnes)
+
+        for ligne in lignes_table:
+            valeurs_sql = ", ".join(echapper_valeur_sql(ligne[c]) for c in colonnes)
+            lignes.append(f"INSERT INTO `{table}` ({colonnes_sql}) VALUES ({valeurs_sql});")
+
+        total_lignes_donnees += len(lignes_table)
+        lignes.append("")
+
+    lignes.append("SET FOREIGN_KEY_CHECKS=1;")
+    connexion.close()
+
+    dump_texte = "\n".join(lignes)
+    return dump_texte, total_lignes_donnees
+
+
+def envoyer_sauvegarde_par_email():
+    """Génère le dump et l'envoie par email en pièce jointe, compressé."""
+    import gzip
+
+    dump_texte, nb_lignes = generer_dump_sql()
+    dump_bytes = dump_texte.encode('utf-8')
+    dump_compresse = gzip.compress(dump_bytes)
+
+    nom_fichier = f"gestpme_backup_{datetime.now().strftime('%Y-%m-%d_%Hh%M')}.sql.gz"
+
+    msg = Message(
+        subject=f"🗄️ Sauvegarde GestPME — {datetime.now().strftime('%d/%m/%Y')}",
+        recipients=[os.environ.get('BACKUP_EMAIL', 'virgilezossou@gmail.com')]
+    )
+    msg.body = (
+        f"Sauvegarde automatique de la base GestPME.\n\n"
+        f"Date : {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}\n"
+        f"Nombre total de lignes sauvegardées : {nb_lignes}\n"
+        f"Taille du fichier compressé : {len(dump_compresse) // 1024} Ko\n\n"
+        f"En cas de besoin, décompressez le fichier .gz puis importez le .sql "
+        f"dans phpMyAdmin (onglet Importer) sur une base neuve avec la même structure de tables."
+    )
+    msg.attach(nom_fichier, "application/gzip", dump_compresse)
+    mail.send(msg)
+
+    return nb_lignes, len(dump_compresse)
+
+
+@app.route('/admin/sauvegarde/declencher/<secret>')
+def declencher_sauvegarde(secret):
+    """
+    Route de déclenchement manuel ou via un service de ping externe (cron-job.org).
+    Protégée par un secret dans l'URL — pas d'authentification par session nécessaire
+    pour permettre un déclenchement automatisé externe.
+    """
+    if secret != BACKUP_SECRET:
+        return "Accès refusé.", 403
+
+    try:
+        nb_lignes, taille = envoyer_sauvegarde_par_email()
+        return {
+            "succes": True,
+            "lignes_sauvegardees": nb_lignes,
+            "taille_ko": taille // 1024,
+            "date": datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        }
+    except Exception as e:
+        return {"succes": False, "erreur": str(e)}, 500
+
+
 def get_etat_vente(curseur, vente_id, pme_id):
     """
     Détermine l'état d'une vente pour savoir quelles actions sont permises.
@@ -2315,7 +2440,8 @@ def super_admin_dashboard():
         pme_liste=pme_liste,
         top_pme=top_pme,
         labels=labels,
-        valeurs=valeurs
+        valeurs=valeurs,
+        backup_secret=BACKUP_SECRET
     )
 
 
