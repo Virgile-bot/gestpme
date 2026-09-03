@@ -116,7 +116,11 @@ PLANS = {
 
 
 def get_connexion():
-    connexion = pymysql.connect(
+    ssl_config = None
+    if os.environ.get('DB_SSL', 'false').lower() == 'true':
+        ssl_config = {'ssl': {'ca': None}} if not os.environ.get('DB_SSL_CA_PATH') else {'ca': os.environ.get('DB_SSL_CA_PATH')}
+
+    kwargs = dict(
         host=os.environ.get('DB_HOST', 'localhost'),
         user=os.environ.get('DB_USER', 'root'),
         password=os.environ.get('DB_PASSWORD', ''),
@@ -124,6 +128,13 @@ def get_connexion():
         port=int(os.environ.get('DB_PORT', 3306)),
         cursorclass=pymysql.cursors.DictCursor
     )
+
+    if os.environ.get('DB_SSL', 'false').lower() == 'true':
+        # Aiven exige SSL — on active le chiffrement sans vérification stricte du CA
+        # (suffisant pour sécuriser le transport ; à renforcer avec le certificat CA si besoin)
+        kwargs['ssl'] = {'ssl': True}
+
+    connexion = pymysql.connect(**kwargs)
     return connexion
 
 
