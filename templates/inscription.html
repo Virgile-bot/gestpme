@@ -24,7 +24,17 @@
                 </div>
                 <div class="form-group">
                     <label>IFU (Identifiant Fiscal Unique)</label>
-                    <input type="text" name="ifu" placeholder="Ex: BJ2026000123" required>
+                    <input type="text" name="ifu" id="ifu-input"
+                           placeholder="Ex: IFU3200800176115 ou 3200800176115"
+                           maxlength="16"
+                           autocomplete="off"
+                           required>
+                    <div id="ifu-feedback" style="font-size:12px; margin-top:6px; min-height:16px;"></div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                        Format : IFU + 13 chiffres · Vérifiez votre IFU sur
+                        <a href="https://ifu.impots.bj/ifu-search" target="_blank"
+                           style="color:var(--accent);">ifu.impots.bj</a>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Téléphone</label>
@@ -50,11 +60,80 @@
                     <input type="password" name="mot_de_passe" required minlength="8">
                 </div>
 
+                <div class="form-group" style="display:flex; align-items:flex-start; gap:10px; margin-top:20px;">
+                    <input type="checkbox" name="cgu_acceptees" id="cgu-check" required
+                           style="width:auto; margin-top:3px; accent-color:var(--green); cursor:pointer;">
+                    <label for="cgu-check" style="text-transform:none; font-weight:400; font-size:13px; color:var(--t2); margin:0; cursor:pointer;">
+                        J'ai lu et j'accepte les
+                        <a href="/cgu" target="_blank" style="color:var(--green);">Conditions Générales d'Utilisation</a>
+                        et la
+                        <a href="/confidentialite" target="_blank" style="color:var(--green);">Politique de Confidentialité</a>
+                        de GestPME.
+                    </label>
+                </div>
+
                 <button type="submit">Créer mon compte</button>
             </form>
 
             <a href="/login" class="retour-login">J'ai déjà un compte — Se connecter</a>
         </div>
     </div>
+
+    <script>
+    const ifuInput = document.getElementById('ifu-input');
+    const feedback = document.getElementById('ifu-feedback');
+
+    function validerIFU(ifu) {
+        ifu = ifu.trim().toUpperCase().replace(/[\s\-]/g, '');
+
+        if (!ifu) return { ok: false, msg: '' };
+
+        let chiffres = ifu;
+        if (ifu.startsWith('IFU')) {
+            chiffres = ifu.slice(3);
+        }
+
+        if (!/^\d+$/.test(chiffres)) {
+            return { ok: false, msg: "❌ L'IFU ne doit contenir que des chiffres après 'IFU'." };
+        }
+
+        if (chiffres.length < 13) {
+            return { ok: false, msg: `❌ Il manque ${13 - chiffres.length} chiffre(s). IFU incomplet.` };
+        }
+
+        if (chiffres.length > 13) {
+            return { ok: false, msg: `❌ Trop de chiffres (${chiffres.length}). L'IFU doit avoir 13 chiffres.` };
+        }
+
+        const ifuFormate = ifu.startsWith('IFU') ? ifu : `IFU${ifu}`;
+        return { ok: true, msg: `✓ Format IFU valide — ${ifuFormate}`, ifu: ifuFormate };
+    }
+
+    ifuInput.addEventListener('input', function() {
+        const result = validerIFU(this.value);
+        if (!result.msg) {
+            feedback.textContent = '';
+            return;
+        }
+        feedback.textContent = result.msg;
+        feedback.style.color = result.ok ? 'var(--accent)' : 'var(--color-red-400)';
+
+        // Auto-compléter avec le préfixe IFU
+        if (result.ok && result.ifu) {
+            this.value = result.ifu;
+        }
+    });
+
+    // Validation avant soumission
+    ifuInput.closest('form').addEventListener('submit', function(e) {
+        const result = validerIFU(ifuInput.value);
+        if (!result.ok) {
+            e.preventDefault();
+            feedback.textContent = result.msg || "❌ Veuillez entrer un IFU valide.";
+            feedback.style.color = 'var(--color-red-400)';
+            ifuInput.focus();
+        }
+    });
+    </script>
 </body>
 </html>

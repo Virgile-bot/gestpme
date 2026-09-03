@@ -226,7 +226,17 @@ def super_admin_requis(fonction):
 
 @app.route('/')
 def accueil():
-    return render_template('accueil.html')
+    return render_template('landing.html')
+
+
+@app.route('/cgu')
+def cgu():
+    return render_template('cgu.html', date_maj=datetime.now().strftime('%d/%m/%Y'))
+
+
+@app.route('/confidentialite')
+def confidentialite():
+    return render_template('confidentialite.html', date_maj=datetime.now().strftime('%d/%m/%Y'))
 
 
 @app.route('/api/verifier-ifu', methods=['POST'])
@@ -259,7 +269,8 @@ def api_verifier_ifu():
     })
 
 
-
+@app.route('/inscription', methods=['GET', 'POST'])
+def inscription():
     if request.method == 'POST':
         nom_entreprise = request.form['nom_entreprise']
         ifu = request.form['ifu']

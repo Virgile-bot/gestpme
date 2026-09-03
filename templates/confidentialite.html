@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GestPME — Politique de Confidentialité</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0E13; --bg-card:#161B27; --green:#00C97A; --green-glow:rgba(0,201,122,.12);
+  --green-line:rgba(0,201,122,.18); --gold:#F0A830; --t1:#EDF0F7; --t2:#7B8DB0; --t3:#3D4F72;
+  --b1:rgba(255,255,255,.06); --r:12px; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);line-height:1.7;font-size:15px;}
+.wrap{max-width:760px;margin:0 auto;padding:64px 24px 100px;}
+.top-link{display:inline-flex;align-items:center;gap:8px;color:var(--green);font-size:13px;font-weight:600;margin-bottom:32px;}
+h1{font-family:'Fraunces',serif;font-size:clamp(28px,4vw,42px);font-weight:900;margin-bottom:8px;letter-spacing:-0.02em;}
+.maj{font-family:var(--mono);font-size:12px;color:var(--t3);margin-bottom:40px;}
+.alerte{background:var(--green-glow);border:1px solid var(--green-line);border-left:3px solid var(--green);
+  border-radius:8px;padding:16px 18px;font-size:13.5px;color:var(--t2);margin-bottom:40px;line-height:1.6;}
+h2{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--t1);margin:40px 0 14px;
+  padding-bottom:10px;border-bottom:1px solid var(--b1);}
+h2 span{font-family:var(--mono);color:var(--green);font-size:14px;margin-right:10px;}
+p{color:var(--t2);margin-bottom:14px;}
+ul{color:var(--t2);margin:0 0 14px 20px;}
+li{margin-bottom:6px;}
+strong{color:var(--t1);}
+a{color:var(--green);}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13.5px;}
+th{text-align:left;color:var(--t1);font-weight:600;padding:10px 12px;background:var(--bg-card);
+  border-bottom:1px solid var(--b1);}
+td{padding:10px 12px;color:var(--t2);border-bottom:1px solid var(--b1);}
+.footer-note{margin-top:56px;padding-top:24px;border-top:1px solid var(--b1);font-size:13px;color:var(--t3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="top-link">← Retour à GestPME</a>
+  <h1>Politique de Confidentialité</h1>
+  <div class="maj">Dernière mise à jour : {{ date_maj }}</div>
+
+  <div class="alerte">
+    <strong>En résumé :</strong> nous collectons uniquement les données nécessaires au fonctionnement de GestPME (compte, ventes, stocks, facturation). Nous ne vendons aucune donnée. Vos mots de passe sont hachés et ne sont jamais stockés en clair. Certaines données peuvent être visibles par les comptes de supervision fiscale (DGI) au sein de la plateforme — voir section 4.
+  </div>
+
+  <h2><span>01</span>Qui traite vos données</h2>
+  <p>GestPME est édité par Zossou Virgile Modérant Nounansou, étudiant entrepreneur basé à Cotonou, République du Bénin, en cours de formalisation juridique de son activité. Pour toute question relative à vos données personnelles : <a href="mailto:virgilezossou@gmail.com">virgilezossou@gmail.com</a>.</p>
+
+  <h2><span>02</span>Données collectées</h2>
+  <table>
+    <tr><th>Catégorie</th><th>Exemples</th><th>Finalité</th></tr>
+    <tr><td>Compte</td><td>Nom, email, mot de passe (haché), rôle</td><td>Authentification, accès au Service</td></tr>
+    <tr><td>Entreprise</td><td>Nom, IFU, adresse, téléphone</td><td>Identification fiscale, facturation</td></tr>
+    <tr><td>Activité commerciale</td><td>Ventes, produits, stocks, dépenses</td><td>Fonctionnement du Service</td></tr>
+    <tr><td>Sécurité</td><td>Secret MFA, journaux de connexion</td><td>Protection du compte</td></tr>
+    <tr><td>Paiement</td><td>Référence de transaction KKiaPay</td><td>Gestion de l'abonnement</td></tr>
+  </table>
+  <p>Nous ne collectons jamais vos identifiants Mobile Money ou vos données bancaires : ceux-ci sont saisis directement sur l'interface de notre prestataire de paiement, KKiaPay.</p>
+
+  <h2><span>03</span>Hébergement et sous-traitants</h2>
+  <p>Vos données sont actuellement hébergées via les prestataires techniques suivants :</p>
+  <ul>
+    <li><strong>Render</strong> — hébergement de l'application ;</li>
+    <li><strong>FreeSQLDatabase</strong> — hébergement de la base de données ;</li>
+    <li><strong>KKiaPay</strong> — traitement des paiements Mobile Money ;</li>
+    <li><strong>Google (Gmail SMTP)</strong> — envoi des emails transactionnels (réinitialisation de mot de passe).</li>
+  </ul>
+  <p>Ces prestataires peuvent héberger des données en dehors du territoire béninois. L'Éditeur s'engage à faire évoluer son infrastructure vers des solutions offrant des garanties renforcées de disponibilité et de localisation à mesure que le Service se professionnalise.</p>
+
+  <h2><span>04</span>Partage des données avec la DGI</h2>
+  <p>Dans le cadre de sa mission de supervision fiscale, GestPME donne accès à certaines données (ventes, factures, informations fiscales des PME) aux comptes disposant d'un rôle de supervision DGI sur la plateforme. Ce partage est une caractéristique intrinsèque du Service et constitue sa finalité de conformité fiscale ; il ne s'agit pas d'une revente ou d'un partage à des fins commerciales.</p>
+
+  <h2><span>05</span>Sécurité des données</h2>
+  <ul>
+    <li>Mots de passe hachés avec l'algorithme <strong>scrypt</strong> (jamais stockés en clair) ;</li>
+    <li>Authentification à deux facteurs (MFA) disponible sur chaque compte ;</li>
+    <li>Connexions chiffrées via HTTPS ;</li>
+    <li>Séparation stricte des données entre entreprises (contrôle d'accès par rôle) ;</li>
+    <li>Tests d'intrusion (pentest) réalisés selon le référentiel OWASP.</li>
+  </ul>
+  <p>Aucun système n'étant infaillible, l'Éditeur s'engage à informer les utilisateurs concernés en cas d'incident de sécurité avéré affectant leurs données.</p>
+
+  <h2><span>06</span>Durée de conservation</h2>
+  <p>Les données sont conservées tant que le compte de l'utilisateur est actif. En cas de suppression de compte, les données commerciales peuvent être conservées pendant une durée raisonnable pour répondre à d'éventuelles obligations légales ou fiscales, avant suppression définitive.</p>
+
+  <h2><span>07</span>Vos droits</h2>
+  <p>Vous pouvez à tout moment demander l'accès, la rectification ou la suppression des données vous concernant en écrivant à <a href="mailto:virgilezossou@gmail.com">virgilezossou@gmail.com</a>. Toute demande de suppression pourra être différée si les données sont nécessaires à une obligation fiscale ou légale en cours.</p>
+
+  <h2><span>08</span>Cookies et session</h2>
+  <p>GestPME utilise uniquement des cookies de session strictement nécessaires au fonctionnement du Service (maintien de la connexion). Aucun cookie publicitaire ou de traçage tiers n'est utilisé.</p>
+
+  <h2><span>09</span>Évolution de cette politique</h2>
+  <p>Cette politique de confidentialité pourra être mise à jour, notamment lors de la formalisation juridique de l'activité ou de l'évolution de l'infrastructure d'hébergement. La date de dernière mise à jour figure en haut de cette page.</p>
+
+  <h2><span>10</span>Contact</h2>
+  <p>Pour toute question : <a href="mailto:virgilezossou@gmail.com">virgilezossou@gmail.com</a></p>
+
+  <div class="footer-note">
+    Voir aussi nos <a href="/cgu">Conditions Générales d'Utilisation</a>.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GestPME — Conditions Générales d'Utilisation</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0E13; --bg-card:#161B27; --green:#00C97A; --green-glow:rgba(0,201,122,.12);
+  --green-line:rgba(0,201,122,.18); --gold:#F0A830; --t1:#EDF0F7; --t2:#7B8DB0; --t3:#3D4F72;
+  --b1:rgba(255,255,255,.06); --r:12px; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);line-height:1.7;font-size:15px;}
+.wrap{max-width:760px;margin:0 auto;padding:64px 24px 100px;}
+.top-link{display:inline-flex;align-items:center;gap:8px;color:var(--green);font-size:13px;font-weight:600;margin-bottom:32px;}
+h1{font-family:'Fraunces',serif;font-size:clamp(28px,4vw,42px);font-weight:900;margin-bottom:8px;letter-spacing:-0.02em;}
+.maj{font-family:var(--mono);font-size:12px;color:var(--t3);margin-bottom:40px;}
+.alerte{background:var(--green-glow);border:1px solid var(--green-line);border-left:3px solid var(--green);
+  border-radius:8px;padding:16px 18px;font-size:13.5px;color:var(--t2);margin-bottom:40px;line-height:1.6;}
+h2{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--t1);margin:40px 0 14px;
+  padding-bottom:10px;border-bottom:1px solid var(--b1);}
+h2 span{font-family:var(--mono);color:var(--green);font-size:14px;margin-right:10px;}
+p{color:var(--t2);margin-bottom:14px;}
+ul{color:var(--t2);margin:0 0 14px 20px;}
+li{margin-bottom:6px;}
+strong{color:var(--t1);}
+a{color:var(--green);}
+.footer-note{margin-top:56px;padding-top:24px;border-top:1px solid var(--b1);font-size:13px;color:var(--t3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="top-link">← Retour à GestPME</a>
+  <h1>Conditions Générales d'Utilisation</h1>
+  <div class="maj">Dernière mise à jour : {{ date_maj }}</div>
+
+  <div class="alerte">
+    <strong>Note de transparence :</strong> GestPME est actuellement un projet porté par un étudiant entrepreneur (Zossou Virgile Modérant Nounansou), en cours de formalisation juridique en République du Bénin. Ces conditions s'appliquent dans l'attente et après l'immatriculation officielle de l'activité, qui sera annoncée sur cette page dès qu'elle interviendra.
+  </div>
+
+  <h2><span>01</span>Objet</h2>
+  <p>Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme GestPME, accessible à l'adresse <a href="https://gestpme.onrender.com">gestpme.onrender.com</a> (le « Service »), éditée par Zossou Virgile Modérant Nounansou (l'« Éditeur »). GestPME est un logiciel de gestion commerciale destiné aux petites et moyennes entreprises (PME), incluant la gestion des ventes, des stocks, de la facturation, et un module de transmission d'informations à la Direction Générale des Impôts (DGI) du Bénin.</p>
+  <p>Toute création de compte sur GestPME implique l'acceptation pleine et entière des présentes CGU.</p>
+
+  <h2><span>02</span>Description du service</h2>
+  <p>GestPME propose notamment :</p>
+  <ul>
+    <li>L'enregistrement et le suivi des ventes et du stock d'une entreprise ;</li>
+    <li>La génération de factures, incluant le calcul de la Taxe sur la Valeur Ajoutée (TVA) ;</li>
+    <li>Des outils de suivi financier (recettes, dépenses, bénéfices, patrimoine) ;</li>
+    <li>Un espace dédié permettant à la DGI de consulter les données fiscales des PME utilisatrices ;</li>
+    <li>Un paiement d'abonnement par Mobile Money via le prestataire tiers KKiaPay.</li>
+  </ul>
+  <p>Le Service est actuellement proposé en version bêta. Il évolue régulièrement et certaines fonctionnalités peuvent être modifiées, ajoutées ou retirées sans préavis pendant cette phase.</p>
+
+  <h2><span>03</span>Inscription et compte utilisateur</h2>
+  <p>L'inscription à GestPME nécessite la fourniture d'informations exactes concernant l'entreprise (dont l'Identifiant Fiscal Unique — IFU) et son représentant. L'utilisateur garantit l'exactitude de ces informations et s'engage à les maintenir à jour.</p>
+  <p><strong>L'IFU déclaré relève de la seule responsabilité de l'utilisateur.</strong> GestPME effectue une vérification de format et, lorsque cela est techniquement possible, une vérification auprès des services compétents ; l'absence d'API publique de vérification en temps réel de la DGI ne dispense pas l'utilisateur de son obligation de déclarer un IFU exact et valide.</p>
+  <p>Chaque utilisateur est responsable de la confidentialité de ses identifiants de connexion et de toute activité effectuée depuis son compte. L'Éditeur recommande vivement l'activation de l'authentification à deux facteurs (MFA) disponible sur la plateforme.</p>
+
+  <h2><span>04</span>Abonnements et paiement</h2>
+  <p>GestPME propose un plan gratuit (Starter) et des plans payants (PME, Business), dont les tarifs sont affichés sur la page d'abonnement au moment de la souscription. Les paiements sont traités par l'intermédiaire du prestataire tiers <strong>KKiaPay</strong>, via Mobile Money (MTN MoMo, Moov Money).</p>
+  <p>L'Éditeur n'a pas accès aux identifiants Mobile Money de l'utilisateur ; ceux-ci sont exclusivement traités par KKiaPay, soumis à ses propres conditions d'utilisation.</p>
+  <p>Sauf erreur avérée du Service, les sommes versées au titre d'un abonnement ne sont pas remboursables au prorata d'une période déjà entamée. L'utilisateur peut à tout moment cesser de renouveler son abonnement ; l'accès aux fonctionnalités payantes cesse à l'échéance de la période déjà payée.</p>
+
+  <h2><span>05</span>Données transmises à la DGI</h2>
+  <p>Les utilisateurs disposant d'un compte administrateur ou gérant sont informés que les ventes, factures et informations fiscales associées à leur PME peuvent être rendues visibles, en tout ou partie, aux comptes disposant d'un rôle de supervision fiscale (DGI) au sein de la plateforme, dans un objectif de conformité et de transparence fiscale. Cette fonctionnalité constitue une caractéristique essentielle du Service et ne peut être désactivée par l'utilisateur.</p>
+
+  <h2><span>06</span>Disponibilité du service</h2>
+  <p>L'Éditeur s'efforce d'assurer un accès continu au Service mais ne garantit pas une disponibilité ininterrompue. Le Service est actuellement hébergé sur une infrastructure en phase de test et de croissance ; des interruptions, ralentissements ou pertes de données résiduelles peuvent survenir, notamment pendant la phase bêta. L'Éditeur s'engage à mettre en œuvre des mesures raisonnables de sauvegarde à mesure que le Service se formalise et se professionnalise.</p>
+  <p>Il est recommandé à l'utilisateur de conserver, de son côté, une trace de ses documents commerciaux importants (exports de factures, par exemple) pendant cette phase.</p>
+
+  <h2><span>07</span>Propriété intellectuelle</h2>
+  <p>La plateforme GestPME, son code, son design et ses éléments graphiques sont la propriété de l'Éditeur. Les données saisies par l'utilisateur (ventes, produits, clients, factures) demeurent la propriété de l'utilisateur et de son entreprise ; l'Éditeur ne revendique aucun droit de propriété sur ces données et ne les utilise pas à des fins commerciales autres que la fourniture du Service.</p>
+
+  <h2><span>08</span>Limitation de responsabilité</h2>
+  <p>Dans les limites permises par la législation béninoise applicable, l'Éditeur ne saurait être tenu responsable des dommages indirects résultant de l'utilisation du Service, notamment les pertes de chiffre d'affaires, de données, ou les conséquences d'une déclaration fiscale reposant sur des informations erronées saisies par l'utilisateur.</p>
+  <p>Le Service ne constitue pas un conseil fiscal, comptable ou juridique. L'utilisateur demeure seul responsable du respect de ses obligations fiscales et déclaratives auprès de l'administration compétente.</p>
+
+  <h2><span>09</span>Résiliation</h2>
+  <p>L'utilisateur peut cesser d'utiliser le Service à tout moment. L'Éditeur se réserve le droit de suspendre ou de résilier l'accès d'un compte en cas de manquement grave aux présentes CGU, notamment en cas de fourniture d'informations sciemment fausses (dont un IFU frauduleux) ou d'usage détourné de la plateforme.</p>
+
+  <h2><span>10</span>Évolution des CGU</h2>
+  <p>Les présentes CGU peuvent être modifiées pour refléter l'évolution du Service, notamment lors de sa formalisation juridique. Les utilisateurs seront informés de toute modification substantielle par voie d'affichage sur la plateforme.</p>
+
+  <h2><span>11</span>Droit applicable</h2>
+  <p>Les présentes CGU sont soumises au droit de la République du Bénin. Tout différend relatif à leur interprétation ou leur exécution relève, à défaut de résolution amiable, des juridictions compétentes béninoises.</p>
+
+  <h2><span>12</span>Contact</h2>
+  <p>Pour toute question relative aux présentes CGU : <a href="mailto:virgilezossou@gmail.com">virgilezossou@gmail.com</a></p>
+
+  <div class="footer-note">
+    Voir aussi notre <a href="/confidentialite">Politique de confidentialité</a>.
+  </div>
+</div>
+</body>
+</html>
