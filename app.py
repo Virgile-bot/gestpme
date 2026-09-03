@@ -375,6 +375,71 @@ def confidentialite():
     return render_template('confidentialite.html', date_maj=datetime.now().strftime('%d/%m/%Y'))
 
 
+# ===========================================================
+# AMORÇAGE DU COMPTE SUPER-ADMIN (fondateur uniquement)
+# ===========================================================
+
+SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL', 'virgilezossou@gmail.com')
+BOOTSTRAP_SECRET = os.environ.get('BOOTSTRAP_SECRET', 'change-moi-en-production')
+
+
+@app.route('/bootstrap-super-admin/<secret>')
+def bootstrap_super_admin(secret):
+    """
+    Route à usage unique permettant au fondateur (et lui seul) de
+    créer ou récupérer le rôle super_admin, sans manipulation SQL manuelle.
+
+    Sécurité :
+    - Nécessite un secret connu uniquement du fondateur (variable d'environnement)
+    - Ne fonctionne QUE pour l'email du fondateur (SUPER_ADMIN_EMAIL)
+    - Se désactive automatiquement dès qu'un super_admin existe déjà en base
+    """
+    if secret != BOOTSTRAP_SECRET:
+        return "Accès refusé.", 403
+
+    connexion = get_connexion()
+    curseur = connexion.cursor()
+
+    # Verrou : si un super_admin existe déjà, on bloque la route
+    curseur.execute("SELECT id, email FROM utilisateurs WHERE role = 'super_admin' LIMIT 1")
+    super_admin_existant = curseur.fetchone()
+
+    if super_admin_existant:
+        connexion.close()
+        if super_admin_existant['email'] == SUPER_ADMIN_EMAIL:
+            return (
+                f"✅ Le compte super-admin existe déjà pour {SUPER_ADMIN_EMAIL}. "
+                f"Rien à faire — connectez-vous normalement sur /login."
+            )
+        return (
+            "🔒 Un compte super-admin existe déjà sur cette plateforme. "
+            "Cette route d'amorçage est désormais désactivée par sécurité."
+        ), 403
+
+    # Aucun super_admin n'existe encore — on promeut (ou crée) le compte du fondateur
+    curseur.execute("SELECT id, role FROM utilisateurs WHERE email = %s", (SUPER_ADMIN_EMAIL,))
+    utilisateur = curseur.fetchone()
+
+    if utilisateur:
+        curseur.execute("""
+            UPDATE utilisateurs SET role = 'super_admin', pme_id = NULL
+            WHERE email = %s
+        """, (SUPER_ADMIN_EMAIL,))
+        connexion.commit()
+        connexion.close()
+        return (
+            f"🎉 Le compte {SUPER_ADMIN_EMAIL} a été promu super-admin avec succès ! "
+            f"Connectez-vous sur /login avec votre mot de passe habituel."
+        )
+    else:
+        connexion.close()
+        return (
+            f"⚠️ Aucun compte trouvé pour {SUPER_ADMIN_EMAIL}. "
+            f"Créez d'abord un compte via /inscription-admin ou /inscription avec cet email, "
+            f"puis revisitez cette page pour le promouvoir en super-admin."
+        )
+
+
 @app.route('/api/verifier-ifu', methods=['POST'])
 def api_verifier_ifu():
     from flask import jsonify
