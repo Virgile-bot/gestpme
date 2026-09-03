@@ -959,7 +959,7 @@ a { text-decoration: none; color: inherit; }
   letter-spacing: 0.04em;
 }
 
-.form-group input,
+.form-group input:not([type="checkbox"]):not([type="radio"]),
 .form-group select,
 .form-group textarea {
   width: 100%;
@@ -977,10 +977,19 @@ a { text-decoration: none; color: inherit; }
   -webkit-appearance: none;
 }
 
-.form-group input:hover,
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+.form-group input:not([type="checkbox"]):not([type="radio"]):hover,
 .form-group select:hover { border-color: rgba(255,255,255,0.1); }
 
-.form-group input:focus,
+.form-group input:not([type="checkbox"]):not([type="radio"]):focus,
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--green);
