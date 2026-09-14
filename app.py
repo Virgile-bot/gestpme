@@ -248,20 +248,28 @@ def declencher_sauvegarde(secret):
     Route de déclenchement manuel ou via un service de ping externe (cron-job.org).
     Protégée par un secret dans l'URL — pas d'authentification par session nécessaire
     pour permettre un déclenchement automatisé externe.
+
+    La génération + l'envoi se font dans un thread séparé pour que la requête HTTP
+    réponde immédiatement, sans bloquer le worker Gunicorn (évite les WORKER TIMEOUT).
     """
     if secret != BACKUP_SECRET:
         return "Accès refusé.", 403
 
-    try:
-        nb_lignes, taille = envoyer_sauvegarde_par_email()
-        return {
-            "succes": True,
-            "lignes_sauvegardees": nb_lignes,
-            "taille_ko": taille // 1024,
-            "date": datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    import threading
+
+    def tache_sauvegarde():
+        try:
+            envoyer_sauvegarde_par_email()
+        except Exception as e:
+            print(f"❌ Erreur lors de la sauvegarde automatique : {e}")
+
+    threading.Thread(target=tache_sauvegarde, daemon=True).start()
+
+    return {
+        "succes": True,
+        "message": "Sauvegarde lancée en arrière-plan — l'email arrivera sous peu.",
+        "date": datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
-    except Exception as e:
-        return {"succes": False, "erreur": str(e)}, 500
 
 
 def get_etat_vente(curseur, vente_id, pme_id):
@@ -2028,7 +2036,19 @@ L'équipe GestPME
     <p style="color:#888; font-size:11px;">GestPME — Plateforme sécurisée de gestion commerciale pour PME béninoises</p>
 </div>
 """
-            mail.send(msg)
+            # Envoi en arrière-plan pour ne jamais bloquer la requête HTTP
+            # (Gmail SMTP peut être lent depuis l'infrastructure Render gratuite)
+            import threading
+            app_ctx = app.app_context()
+
+            def envoyer_en_arriere_plan(message):
+                with app_ctx:
+                    try:
+                        mail.send(message)
+                    except Exception as e:
+                        print(f"❌ Erreur envoi email réinitialisation : {e}")
+
+            threading.Thread(target=envoyer_en_arriere_plan, args=(msg,), daemon=True).start()
 
         else:
             connexion.close()
