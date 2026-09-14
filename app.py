@@ -106,6 +106,57 @@ app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 
 mail = Mail(app)
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
 
+# ===========================================================
+# ENVOI D'EMAILS VIA BREVO (API HTTP — contourne le blocage SMTP de Render)
+# ===========================================================
+
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', 'virgilezossou@gmail.com')
+BREVO_SENDER_NOM = 'GestPME'
+
+
+def envoyer_email_brevo(destinataire, sujet, contenu_html, contenu_texte=None, piece_jointe=None, nom_fichier=None):
+    """
+    Envoie un email via l'API HTTP de Brevo (port 443, jamais bloqué par les
+    hébergeurs gratuits — contrairement au SMTP classique sur port 587/465).
+
+    piece_jointe : bytes bruts du fichier (optionnel)
+    nom_fichier  : nom du fichier joint (optionnel, requis si piece_jointe fourni)
+    """
+    import urllib.request
+    import json as json_lib
+
+    if not BREVO_API_KEY:
+        raise Exception("BREVO_API_KEY n'est pas configurée dans les variables d'environnement.")
+
+    payload = {
+        "sender": {"name": BREVO_SENDER_NOM, "email": BREVO_SENDER_EMAIL},
+        "to": [{"email": destinataire}],
+        "subject": sujet,
+        "htmlContent": contenu_html,
+    }
+    if contenu_texte:
+        payload["textContent"] = contenu_texte
+
+    if piece_jointe and nom_fichier:
+        contenu_b64 = base64.b64encode(piece_jointe).decode('utf-8')
+        payload["attachment"] = [{"content": contenu_b64, "name": nom_fichier}]
+
+    data = json_lib.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=data,
+        headers={
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json",
+        },
+        method="POST"
+    )
+
+    with urllib.request.urlopen(req, timeout=15) as reponse:
+        return reponse.status in (200, 201)
+
 # Code secret pour l'inscription des admins PME
 ADMIN_CODE_SECRET = os.environ.get('ADMIN_CODE_SECRET', 'GESTPME-ADMIN-2026')
 
@@ -229,20 +280,24 @@ def envoyer_sauvegarde_par_email():
 
     nom_fichier = f"gestpme_backup_{datetime.now().strftime('%Y-%m-%d_%Hh%M')}.sql.gz"
 
-    msg = Message(
-        subject=f"🗄️ Sauvegarde GestPME — {datetime.now().strftime('%d/%m/%Y')}",
-        recipients=[os.environ.get('BACKUP_EMAIL', 'virgilezossou@gmail.com')]
+    contenu_html = f"""
+    <div style="font-family: Arial, sans-serif;">
+        <h2 style="color:#1B4332;">🗄️ Sauvegarde GestPME</h2>
+        <p>Sauvegarde automatique de la base GestPME.</p>
+        <p><strong>Date :</strong> {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}</p>
+        <p><strong>Lignes sauvegardées :</strong> {nb_lignes}</p>
+        <p><strong>Taille compressée :</strong> {len(dump_compresse) // 1024} Ko</p>
+        <p>Décompressez le fichier .gz puis importez le .sql dans phpMyAdmin (onglet Importer) sur une base neuve avec la même structure de tables.</p>
+    </div>
+    """
+
+    envoyer_email_brevo(
+        destinataire=os.environ.get('BACKUP_EMAIL', 'virgilezossou@gmail.com'),
+        sujet=f"🗄️ Sauvegarde GestPME — {datetime.now().strftime('%d/%m/%Y')}",
+        contenu_html=contenu_html,
+        piece_jointe=dump_compresse,
+        nom_fichier=nom_fichier
     )
-    msg.body = (
-        f"Sauvegarde automatique de la base GestPME.\n\n"
-        f"Date : {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}\n"
-        f"Nombre total de lignes sauvegardées : {nb_lignes}\n"
-        f"Taille du fichier compressé : {len(dump_compresse) // 1024} Ko\n\n"
-        f"En cas de besoin, décompressez le fichier .gz puis importez le .sql "
-        f"dans phpMyAdmin (onglet Importer) sur une base neuve avec la même structure de tables."
-    )
-    msg.attach(nom_fichier, "application/gzip", dump_compresse)
-    mail.send(msg)
 
     return nb_lignes, len(dump_compresse)
 
@@ -2008,12 +2063,8 @@ def mot_de_passe_oublie():
             base_url = os.environ.get('APP_URL', 'http://127.0.0.1:5001')
             lien = f"{base_url}/reinitialiser/{token}"
 
-            # Envoyer l'email
-            msg = Message(
-                subject="GestPME — Réinitialisation de votre mot de passe",
-                recipients=[email]
-            )
-            msg.body = f"""Bonjour {utilisateur['nom_complet']},
+            # Envoyer l'email via Brevo (API HTTP — fonctionne sur Render gratuit)
+            contenu_texte = f"""Bonjour {utilisateur['nom_complet']},
 
 Vous avez demandé une réinitialisation de votre mot de passe GestPME.
 
@@ -2026,7 +2077,7 @@ Si vous n'avez pas fait cette demande, ignorez cet email — votre mot de passe 
 
 L'équipe GestPME
 """
-            msg.html = f"""
+            contenu_html = f"""
 <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px;">
     <h2 style="color: #1B4332;">GestPME</h2>
     <p>Bonjour <strong>{utilisateur['nom_complet']}</strong>,</p>
@@ -2042,18 +2093,19 @@ L'équipe GestPME
 </div>
 """
             # Envoi en arrière-plan pour ne jamais bloquer la requête HTTP
-            # (Gmail SMTP peut être lent depuis l'infrastructure Render gratuite)
             import threading
-            app_ctx = app.app_context()
 
-            def envoyer_en_arriere_plan(message):
-                with app_ctx:
-                    try:
-                        mail.send(message)
-                    except Exception as e:
-                        print(f"❌ Erreur envoi email réinitialisation : {e}")
+            def envoyer_en_arriere_plan(dest, sujet, html, texte):
+                try:
+                    envoyer_email_brevo(dest, sujet, html, texte)
+                except Exception as e:
+                    print(f"❌ Erreur envoi email réinitialisation : {e}")
 
-            threading.Thread(target=envoyer_en_arriere_plan, args=(msg,), daemon=True).start()
+            threading.Thread(
+                target=envoyer_en_arriere_plan,
+                args=(email, "GestPME — Réinitialisation de votre mot de passe", contenu_html, contenu_texte),
+                daemon=True
+            ).start()
 
         else:
             connexion.close()
