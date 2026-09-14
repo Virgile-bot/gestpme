@@ -1,3 +1,8 @@
+import socket
+_getaddrinfo_original = socket.getaddrinfo
+def _forcer_ipv4(host, port, family=0, type=0, proto=0, flags=0):
+    return _getaddrinfo_original(host, port, socket.AF_INET, type, proto, flags)
+socket.getaddrinfo = _forcer_ipv4
 from flask import Flask, render_template, request, redirect, session, url_for, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
