@@ -93,6 +93,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_TIMEOUT'] = 15
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
 app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
