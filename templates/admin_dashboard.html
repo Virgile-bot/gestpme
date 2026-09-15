@@ -3,78 +3,2423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestPME — Réapprovisionnement</title>
+    <title>GestPME — Responsable</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
 </head>
 <body class="page-dashboard">
+
     <header class="topbar">
-        <div class="topbar-logo">GestPME</div>
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
         <div class="topbar-user">
-            <a href="/admin" class="btn-logout"><i class="ti ti-arrow-left"></i> Retour</a>
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
         </div>
     </header>
+
+    <div id="toast-container"></div>
+
     <main class="contenu">
-        <h1>Réapprovisionner le stock</h1>
-        <p>La mise à jour sera visible instantanément chez les gérants</p>
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
 
-        {% if erreur %}
-        <p class="erreur">{{ erreur }}</p>
-        {% endif %}
-
-        <div class="form-card">
-            <!-- Produit actuel -->
-            <div style="background:var(--bg-primary); border:1px solid var(--border-primary); border-radius:var(--radius-md); padding:var(--sp-4); margin-bottom:var(--sp-6);">
-                <div style="font-size:var(--fs-xs); color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:var(--sp-2);">Produit sélectionné</div>
-                <div style="font-size:var(--fs-lg); font-weight:700; color:var(--text-primary);">{{ produit.nom }}</div>
-                <div style="font-size:var(--fs-sm); color:var(--text-secondary); margin-top:var(--sp-1);">{{ produit.categorie }}</div>
-                <div style="display:flex; gap:var(--sp-6); margin-top:var(--sp-3);">
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
                     <div>
-                        <div style="font-size:var(--fs-xs); color:var(--text-muted);">Stock actuel</div>
-                        <div style="font-family:'Fraunces',serif; font-size:var(--fs-3xl); font-weight:700;
-                            color:{{ 'var(--color-red-400)' if produit.quantite_stock <= produit.seuil_alerte else 'var(--accent)' }};">
-                            {{ produit.quantite_stock }}
-                        </div>
-                    </div>
-                    <div>
-                        <div style="font-size:var(--fs-xs); color:var(--text-muted);">Seuil d'alerte</div>
-                        <div style="font-family:'Fraunces',serif; font-size:var(--fs-3xl); font-weight:700; color:var(--color-orange-400);">
-                            {{ produit.seuil_alerte }}
-                        </div>
-                    </div>
-                    <div>
-                        <div style="font-size:var(--fs-xs); color:var(--text-muted);">Prix d'achat</div>
-                        <div style="font-family:'Fraunces',serif; font-size:var(--fs-3xl); font-weight:700; color:var(--text-primary);">
-                            {{ produit.prix_achat }} F
-                        </div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
                     </div>
                 </div>
             </div>
-
-            <form method="POST" action="/admin/stock/reapprovisionner/{{ produit.id }}">
-                <div class="form-section">Quantité à ajouter</div>
-
-                <div class="form-group">
-                    <label>Quantité à réapprovisionner</label>
-                    <input type="number" name="quantite" min="1" placeholder="Ex: 50" required autofocus>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Motif (optionnel)</label>
-                    <input type="text" name="motif" placeholder="Ex: Livraison fournisseur Janvier"
-                           value="Réapprovisionnement par le responsable">
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
                 </div>
-
-                <div class="conseil">
-                    <i class="ti ti-info-circle"></i>
-                    Le stock sera mis à jour <strong>instantanément</strong> chez tous les gérants connectés via notification temps réel.
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
                 </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <button type="submit">
-                    <i class="ti ti-plus"></i> Réapprovisionner le stock
-                </button>
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
             </form>
         </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Responsable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
+</head>
+<body class="page-dashboard">
+
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
+
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Responsable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
+</head>
+<body class="page-dashboard">
+
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
+
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Responsable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
+</head>
+<body class="page-dashboard">
+
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
+
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Responsable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
+</head>
+<body class="page-dashboard">
+
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
+
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestPME — Responsable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+            animation: topbar-pulse 2s infinite;
+        }
+        .notif-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--sp-3) var(--sp-4);
+            margin-bottom: var(--sp-2);
+            font-size: var(--fs-sm);
+            animation: fadeUp 0.3s ease;
+        }
+        .notif-item.reappro { border-left-color: var(--color-orange-400); }
+        #toast-container {
+            position: fixed;
+            top: 70px; right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(300px, calc(100vw - 32px));
+        }
+        .stock-barre-wrap {
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: var(--sp-2);
+            overflow: hidden;
+        }
+        .stock-barre {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+        .stock-barre.ok    { background: var(--accent); }
+        .stock-barre.warn  { background: var(--color-orange-400); }
+        .stock-barre.crit  { background: var(--color-red-400); }
+        .metric-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .metric-icon.green { background: rgba(0,201,122,0.1); color: var(--accent); }
+        .metric-icon.orange { background: rgba(240,168,48,0.1); color: var(--color-orange-400); }
+        .metric-icon.blue { background: rgba(59,130,246,0.1); color: var(--color-blue-400); }
+        .metric-icon.red { background: rgba(255,77,77,0.1); color: var(--color-red-400); }
+        .carte-flex { display: flex; align-items: center; gap: var(--sp-3); }
+    </style>
+</head>
+<body class="page-dashboard">
+
+    <header class="topbar">
+        <div class="topbar-logo">
+            <span class="live-dot"></span>
+            GestPME — Responsable
+        </div>
+        <div class="topbar-user">
+            <span>{{ nom }}</span>
+            <a href="/admin/stocks" class="btn-logout">
+                <i class="ti ti-box"></i> Stocks
+            </a>
+            <a href="/admin/rapport" class="btn-logout">
+                <i class="ti ti-chart-bar"></i> Rapports
+            </a>
+            <a href="/logout" class="btn-logout">
+                <i class="ti ti-logout"></i>
+            </a>
+        </div>
+    </header>
+
+    <div id="toast-container"></div>
+
+    <main class="contenu">
+        <h1>Tableau de bord</h1>
+        <p>Vue complète de votre entreprise — temps réel</p>
+
+        <!-- MÉTRIQUES CLÉS -->
+        <div class="cartes">
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon green"><i class="ti ti-trending-up"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du jour</div>
+                        <div class="carte-valeur" id="total-jour">{{ "%.0f"|format(ventes_jour.total_jour|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_jour.nombre_ventes }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-calendar-month"></i></div>
+                    <div>
+                        <div class="carte-label">Recette du mois</div>
+                        <div class="carte-valeur">{{ "%.0f"|format(ventes_mois.total_mois|float) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ ventes_mois.nombre_ventes_mois }} vente(s)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon {{ 'green' if benefice_net >= 0 else 'red' }}">
+                        <i class="ti ti-coin"></i>
+                    </div>
+                    <div>
+                        <div class="carte-label">Bénéfice net</div>
+                        <div class="carte-valeur" style="color: {{ 'var(--accent)' if benefice_net >= 0 else 'var(--color-red-400)' }}">
+                            {{ "%.0f"|format(benefice_net) }} F
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">marge − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-building-bank"></i></div>
+                    <div>
+                        <div class="carte-label">Patrimoine total</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(patrimoine_total) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">tréso + stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon blue"><i class="ti ti-wallet"></i></div>
+                    <div>
+                        <div class="carte-label">Trésorerie</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(tresorerie) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">ventes − dépenses</div>
+                    </div>
+                </div>
+            </div>
+            <div class="carte">
+                <div class="carte-flex">
+                    <div class="metric-icon orange"><i class="ti ti-box"></i></div>
+                    <div>
+                        <div class="carte-label">Valeur du stock</div>
+                        <div class="carte-valeur" style="font-size:18px;">{{ "%.0f"|format(valeur_stock) }} F</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">au prix d'achat</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE VENTES 7 JOURS -->
+        <div class="graphique-carte">
+            <div class="modules-titre" style="margin-top:0;">
+                <i class="ti ti-chart-line" style="color:var(--accent);"></i>
+                Évolution des ventes — 7 derniers jours
+            </div>
+            <div class="graphique-wrap" style="height:200px;">
+                <canvas id="graphiqueVentes"></canvas>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-3);">
+            <div class="modules-titre" style="margin:0; flex:1;">
+                <i class="ti ti-bell" style="color:var(--accent);"></i>
+                Notifications
+                <span class="badge badge-payee" id="nb-notifs">{{ notifications|length }}</span>
+            </div>
+            <form method="POST" action="/admin/notifications/lire" style="margin:0;">
+                <button type="submit" class="btn-sm">Tout marquer comme lu</button>
+            </form>
+        </div>
+        <div id="notif-container" style="margin-bottom:var(--sp-6);">
+            {% for n in notifications %}
+            <div class="notif-item {{ 'reappro' if n.type_notification == 'reappro_stock' }}">
+                <div style="font-weight:600;">{{ n.message }}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                    {{ n.date_creation.strftime('%d/%m/%Y à %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- STOCKS — Réapprovisionnement -->
+        <div class="modules-titre">
+            <i class="ti ti-box" style="color:var(--accent);"></i>
+            Gestion des stocks
+            <a href="/admin/stocks" class="btn-sm" style="margin-left:auto;">Voir tout</a>
+        </div>
+        <div class="liste-cartes" style="margin-bottom:var(--sp-8);">
+            {% for p in produits_stock %}
+            {% set pct = [(p.quantite_stock / p.seuil_alerte * 100)|int, 100]|min if p.seuil_alerte > 0 else 100 %}
+            {% set classe = 'crit' if p.quantite_stock <= p.seuil_alerte else ('warn' if p.quantite_stock <= p.seuil_alerte * 2 else 'ok') %}
+            <div class="item-carte {{ 'statut-alerte' if classe == 'crit' else ('statut-attente' if classe == 'warn' else 'statut-ok') }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ p.nom }}</div>
+                    <div class="item-carte-sous">{{ p.categorie }} · Seuil : {{ p.seuil_alerte }}</div>
+                    <div class="stock-barre-wrap">
+                        <div class="stock-barre {{ classe }}" style="width:{{ pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant" style="color: {{ 'var(--color-red-400)' if classe == 'crit' else ('var(--color-orange-400)' if classe == 'warn' else 'var(--accent)') }};">
+                        {{ p.quantite_stock }}
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">unités</span>
+                </div>
+                <div class="item-carte-actions">
+                    <a href="/admin/stock/reapprovisionner/{{ p.id }}" class="btn-sm primaire">
+                        <i class="ti ti-plus"></i> Réappro
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucun produit enregistré.</div>
+            {% endfor %}
+        </div>
+
+        <!-- DERNIÈRES VENTES -->
+        <div class="modules-titre">
+            <i class="ti ti-shopping-cart" style="color:var(--accent);"></i>
+            Dernières ventes (temps réel)
+        </div>
+        <div class="liste-cartes" id="ventes-live">
+            {% for v in dernieres_ventes %}
+            <div class="item-carte {{ 'statut-ok' if v.statut == 'payee' else 'statut-alerte' }}">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ v.client_nom }}</div>
+                    <div class="item-carte-sous">
+                        {{ v.nom_produit }} · {{ v.quantite }} unité(s) · <strong>{{ v.gerant_nom }}</strong>
+                    </div>
+                    <div class="item-carte-sous" style="font-size:11px;">
+                        {{ v.date_vente.strftime('%d/%m/%Y à %H:%M') }}
+                    </div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">{{ v.montant_total }} F</div>
+                    <span class="badge badge-{{ v.statut }}">{{ v.statut }}</span>
+                </div>
+                <div class="item-carte-actions">
+                    {% if v.statut == 'payee' and v.facture_id is none %}
+                    <a href="/admin/ventes/rejeter/{{ v.id }}" class="btn-sm danger"
+                       onclick="return confirm('Rejeter cette vente ?')">
+                        <i class="ti ti-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="liste-vide">Aucune vente enregistrée pour le moment.</div>
+            {% endfor %}
+        </div>
+
+        <!-- GÉRANTS -->
+        <div class="modules-titre">
+            <i class="ti ti-users" style="color:var(--accent);"></i>
+            Gérants de l'entreprise
+        </div>
+        <div class="liste-cartes">
+            {% for g in gerants %}
+            <div class="item-carte statut-ok">
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">{{ g.nom_complet }}</div>
+                    <div class="item-carte-sous">{{ g.email }}</div>
+                </div>
+                <div class="item-carte-meta">
+                    {% if g.mfa_active %}
+                    <span class="badge badge-payee"><i class="ti ti-shield-check"></i> MFA</span>
+                    {% else %}
+                    <span class="badge badge-en_attente">MFA inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // Graphique des ventes
+        const ctx = document.getElementById('graphiqueVentes').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_graphique | tojson }},
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: {{ valeurs_graphique | tojson }},
+                    borderColor: '#00C97A',
+                    backgroundColor: 'rgba(0,201,122,0.06)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00C97A',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#4D4D4D', font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#4D4D4D',
+                            font: { size: 11 },
+                            callback: v => v.toLocaleString('fr-FR') + ' F'
+                        }
+                    }
+                }
+            }
+        });
+
+        // WebSocket — notifications temps réel
+        const socket = io();
+        let totalJour = {{ ventes_jour.total_jour|float }};
+        let nbNotifs = {{ notifications|length }};
+
+        socket.on('connect', () => {
+            socket.emit('rejoindre_salle_admin', {});
+        });
+
+        socket.on('nouvelle_vente', function(data) {
+            totalJour += data.montant;
+            document.getElementById('total-jour').textContent =
+                Math.round(totalJour).toLocaleString('fr-FR') + ' F';
+
+            nbNotifs++;
+            const badge = document.getElementById('nb-notifs');
+            if (badge) badge.textContent = nbNotifs;
+
+            // Ajouter la vente en haut
+            const liste = document.getElementById('ventes-live');
+            const vide = liste.querySelector('.liste-vide');
+            if (vide) vide.remove();
+
+            const carte = document.createElement('div');
+            carte.className = 'item-carte statut-ok';
+            carte.style.animation = 'fadeUp 0.4s ease';
+            carte.innerHTML = `
+                <div class="item-carte-principal">
+                    <div class="item-carte-titre">${data.client}</div>
+                    <div class="item-carte-sous">${data.produit} · ${data.quantite} unité(s)</div>
+                    <div class="item-carte-sous" style="font-size:11px;">Aujourd'hui à ${data.heure}</div>
+                </div>
+                <div class="item-carte-meta">
+                    <div class="item-carte-montant">${Math.round(data.montant).toLocaleString('fr-FR')} F</div>
+                    <span class="badge badge-payee">payee</span>
+                </div>
+            `;
+            liste.insertBefore(carte, liste.firstChild);
+
+            // Notification dans le panneau
+            const notifContainer = document.getElementById('notif-container');
+            if (notifContainer) {
+                const notif = document.createElement('div');
+                notif.className = 'notif-item';
+                notif.innerHTML = `
+                    <div style="font-weight:600;">${data.message}</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">À l'instant</div>
+                `;
+                notifContainer.insertBefore(notif, notifContainer.firstChild);
+            }
+
+            afficherToast('🛒 Nouvelle vente', data.client + ' — ' + data.produit,
+                Math.round(data.montant).toLocaleString('fr-FR') + ' F', data.heure);
+        });
+
+        function afficherToast(titre, sous, montant, heure) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight:700; font-size:13px;">${titre}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${sous}</div>
+                <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); margin-top:4px;">${montant}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${heure}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
 </body>
 </html>
