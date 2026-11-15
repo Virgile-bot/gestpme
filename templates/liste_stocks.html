@@ -52,9 +52,9 @@
                 <div class="item-carte-actions">
                     {% if produit.actif %}
                         <a href="/stocks/modifier/{{ produit.id }}" class="btn-sm">Modifier</a>
-                        <a href="/stocks/supprimer/{{ produit.id }}" class="btn-sm danger" onclick="return confirm('Supprimer ou désactiver ce produit ?')">Supprimer</a>
+                        <form method="POST" action="/stocks/supprimer/{{ produit.id }}" style="display:inline" onsubmit="return confirm('Supprimer ou désactiver ce produit ?')"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm danger">Supprimer</button></form>
                     {% else %}
-                        <a href="/stocks/reactiver/{{ produit.id }}" class="btn-sm primaire">Réactiver</a>
+                        <form method="POST" action="/stocks/reactiver/{{ produit.id }}" style="display:inline"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm primaire">Réactiver</button></form>
                     {% endif %}
                 </div>
             </div>
