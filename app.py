@@ -119,6 +119,31 @@ app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 
 
 mail = Mail(app)
 
+# Protection CSRF ciblée pour les actions sensibles migrées en POST.
+_CSRF_PROTECTED_ENDPOINTS = {
+    'annuler_vente', 'supprimer_vente', 'supprimer_produit',
+    'reactiver_produit', 'generer_facture', 'marquer_transmise'
+}
+
+@app.context_processor
+def inject_csrf_token():
+    def csrf_token():
+        token = session.get('_csrf_token')
+        if not token:
+            token = secrets.token_urlsafe(32)
+            session['_csrf_token'] = token
+        return token
+    return {'csrf_token': csrf_token}
+
+@app.before_request
+def verifier_csrf_actions_sensibles():
+    if request.endpoint in _CSRF_PROTECTED_ENDPOINTS and request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        token_session = session.get('_csrf_token', '')
+        token_formulaire = request.form.get('_csrf_token', '')
+        if not token_session or not token_formulaire or not secrets.compare_digest(token_session, token_formulaire):
+            return "Requête refusée : jeton CSRF invalide ou manquant.", 400
+
+
 # Origines Socket.IO explicitement autorisées. En production, APP_URL est requis.
 _origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 _origins = [origin.strip().rstrip('/') for origin in _origins_env.split(',') if origin.strip()]
@@ -1222,7 +1247,7 @@ def mettre_a_jour_vente(vente_id):
         return f"Erreur lors de la modification : {erreur}", 500
 
 
-@app.route('/ventes/annuler/<int:vente_id>')
+@app.route('/ventes/annuler/<int:vente_id>', methods=['POST'])
 @gerant_requis
 def annuler_vente(vente_id):
     connexion = get_connexion()
@@ -1276,7 +1301,7 @@ def annuler_vente(vente_id):
         return f"Erreur lors de l'annulation : {erreur}", 500
 
 
-@app.route('/ventes/supprimer/<int:vente_id>')
+@app.route('/ventes/supprimer/<int:vente_id>', methods=['POST'])
 @gerant_requis
 def supprimer_vente(vente_id):
     connexion = get_connexion()
@@ -1424,7 +1449,7 @@ def mettre_a_jour_produit(produit_id):
     return redirect('/stocks')
 
 
-@app.route('/stocks/supprimer/<int:produit_id>')
+@app.route('/stocks/supprimer/<int:produit_id>', methods=['POST'])
 @gerant_requis
 def supprimer_produit(produit_id):
     connexion = get_connexion()
@@ -1456,7 +1481,7 @@ def supprimer_produit(produit_id):
     return redirect('/stocks')
 
 
-@app.route('/stocks/reactiver/<int:produit_id>')
+@app.route('/stocks/reactiver/<int:produit_id>', methods=['POST'])
 @gerant_requis
 def reactiver_produit(produit_id):
     connexion = get_connexion()
@@ -1578,7 +1603,7 @@ def liste_factures():
     return render_template('liste_factures.html', factures=factures)
 
 
-@app.route('/factures/generer/<int:vente_id>')
+@app.route('/factures/generer/<int:vente_id>', methods=['POST'])
 @gerant_requis
 def generer_facture(vente_id):
     connexion = get_connexion()
@@ -1716,7 +1741,7 @@ def dgi_detail_pme(pme_id):
     return render_template('dgi_detail_pme.html', pme=pme, factures=factures)
 
 
-@app.route('/dgi/marquer_transmise/<int:facture_id>')
+@app.route('/dgi/marquer_transmise/<int:facture_id>', methods=['POST'])
 @dgi_requis
 def marquer_transmise(facture_id):
     connexion = get_connexion()
