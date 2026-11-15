@@ -36,16 +36,16 @@
                 <div class="item-carte-actions">
                     {% if vente.statut == 'annulee' %}
                         {% if vente.facture_id is none %}
-                            <a href="/ventes/supprimer/{{ vente.id }}" class="btn-sm danger" onclick="return confirm('Supprimer définitivement cette vente annulée ?')">Supprimer</a>
+                            <form method="POST" action="/ventes/supprimer/{{ vente.id }}" style="display:inline" onsubmit="return confirm('Supprimer définitivement cette vente annulée ?')"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm danger">Supprimer</button></form>
                         {% else %}
                             <span style="font-size:12px; color:var(--encre-douce);">Annulée</span>
                         {% endif %}
                     {% elif vente.facture_id is none %}
                         <a href="/ventes/modifier/{{ vente.id }}" class="btn-sm">Modifier</a>
-                        <a href="/ventes/supprimer/{{ vente.id }}" class="btn-sm danger" onclick="return confirm('Supprimer définitivement cette vente ?')">Supprimer</a>
-                        <a href="/factures/generer/{{ vente.id }}" class="btn-sm primaire">Facturer</a>
+                        <form method="POST" action="/ventes/supprimer/{{ vente.id }}" style="display:inline" onsubmit="return confirm('Supprimer définitivement cette vente ?')"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm danger">Supprimer</button></form>
+                        <form method="POST" action="/factures/generer/{{ vente.id }}" style="display:inline"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm primaire">Facturer</button></form>
                     {% elif not vente.transmise_dgi %}
-                        <a href="/ventes/annuler/{{ vente.id }}" class="btn-sm danger" onclick="return confirm('Annuler cette vente facturée ?')">Annuler</a>
+                        <form method="POST" action="/ventes/annuler/{{ vente.id }}" style="display:inline" onsubmit="return confirm('Annuler cette vente facturée ?')"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-sm danger">Annuler</button></form>
                         <a href="/factures/voir/{{ vente.facture_id }}" class="btn-sm">Facture</a>
                     {% else %}
                         <span style="font-size:11px; color:var(--encre-douce);">Verrouillée DGI</span>
