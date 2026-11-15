@@ -92,19 +92,44 @@ def verifier_ifu_dgi(ifu):
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'cle_locale_dev_a_changer')
+
+# En production, aucun secret de secours ne doit être utilisé.
+_ENV_PRODUCTION = os.environ.get('FLASK_ENV', '').lower() == 'production' or os.environ.get('RENDER', '').lower() == 'true'
+_SECRET_KEY = os.environ.get('SECRET_KEY')
+if _ENV_PRODUCTION and not _SECRET_KEY:
+    raise RuntimeError("SECRET_KEY doit être configurée dans l'environnement de production.")
+app.secret_key = _SECRET_KEY or secrets.token_hex(32)
+
+# Attributs de session renforcés en production.
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=_ENV_PRODUCTION,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=int(os.environ.get('SESSION_LIFETIME_MINUTES', '60')))
+)
 
 # Configuration Flask-Mail (Gmail)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_TIMEOUT'] = 15
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'trjtcytggncuqkh')
-app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', 'virgilezossou@gmail.com'))
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = ('GestPME', os.environ.get('MAIL_USERNAME', ''))
 
 mail = Mail(app)
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
+
+# Origines Socket.IO explicitement autorisées. En production, APP_URL est requis.
+_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+_origins = [origin.strip().rstrip('/') for origin in _origins_env.split(',') if origin.strip()]
+_app_url = os.environ.get('APP_URL', '').strip().rstrip('/')
+if _app_url:
+    _origins.append(_app_url)
+if not _ENV_PRODUCTION:
+    _origins.extend(['http://localhost:5001', 'http://127.0.0.1:5001'])
+if _ENV_PRODUCTION and not _origins:
+    raise RuntimeError("Définir APP_URL ou CORS_ALLOWED_ORIGINS en production.")
+socketio = SocketIO(app, async_mode='threading', cors_allowed_origins=sorted(set(_origins)))
 
 # ===========================================================
 # ENVOI D'EMAILS VIA BREVO (API HTTP — contourne le blocage SMTP de Render)
@@ -199,7 +224,7 @@ def get_connexion():
 # SAUVEGARDE AUTOMATIQUE DE LA BASE DE DONNÉES
 # ===========================================================
 
-BACKUP_SECRET = os.environ.get('BACKUP_SECRET', 'change-moi-en-production')
+BACKUP_SECRET = os.environ.get('BACKUP_SECRET', '')
 
 TABLES_A_SAUVEGARDER = [
     'pme', 'utilisateurs', 'produits', 'ventes', 'lignes_vente',
@@ -312,7 +337,8 @@ def declencher_sauvegarde(secret):
     La génération + l'envoi se font dans un thread séparé pour que la requête HTTP
     réponde immédiatement, sans bloquer le worker Gunicorn (évite les WORKER TIMEOUT).
     """
-    if secret != BACKUP_SECRET:
+    # Un secret absent ne doit jamais autoriser l'accès avec une valeur connue.
+    if not BACKUP_SECRET or not secrets.compare_digest(secret, BACKUP_SECRET):
         return "Accès refusé.", 403
 
     import threading
@@ -2720,22 +2746,14 @@ def kkiapay_confirmer():
     if not transaction_id or plan not in PLANS:
         return jsonify({'success': False, 'message': 'Données invalides'}), 400
 
-    try:
-        connexion = get_connexion()
-        curseur = connexion.cursor()
-        date_debut = datetime.now()
-        date_fin = date_debut + timedelta(days=30)
-        curseur.execute("""
-            INSERT INTO abonnements (pme_id, plan, montant, statut, transaction_id, date_debut, date_fin)
-            VALUES (%s, %s, %s, 'actif', %s, %s, %s)
-        """, (session['pme_id'], plan, PLANS[plan]['prix'], transaction_id, date_debut, date_fin))
-        connexion.commit()
-        connexion.close()
-        return jsonify({'success': True})
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+    # IMPORTANT : ne jamais activer un abonnement sur la seule déclaration du navigateur.
+    # L'intégration doit d'abord interroger l'API officielle Kkiapay côté serveur et
+    # contrôler statut, montant, devise, référence et idempotence.
+    return jsonify({
+        'success': False,
+        'message': "La confirmation automatique du paiement est temporairement indisponible."
+    }), 503
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='127.0.0.1', port=5001)
+    socketio.run(app, debug=False, host='127.0.0.1', port=5001)
